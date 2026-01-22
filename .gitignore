@@ -14,20 +14,24 @@ Debug/
 Release/
 x64/
 x86/
+build-*/
 */Debug/
 */Release/
 */x64/
 */x86/
+out/
+*_build/
 
 ############################
-# IntelliSense
+# IntelliSense / VS database
 ############################
 *.VC.db
 *.VC.opendb
+*.ipch
 ipch/
 
 ############################
-# MFC / Win32
+# MSVC intermediate files
 ############################
 *.aps
 *.ncb
@@ -40,16 +44,15 @@ ipch/
 *.log
 
 ############################
-# CMake (如果以后用)
+# CMake
 ############################
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
-out/
 
 ############################
-# Others
+# Binaries & libs
 ############################
 *.exe
 *.dll
@@ -57,28 +60,13 @@ out/
 *.exp
 
 ############################
-# Qt Creator
+# Qt Creator / Qt generated
 ############################
 *.pro.user*
 *.qbs.user*
 *.qmlproject.user*
 *.creator.user*
 *.autosave
-
-############################
-# Qt build dirs (Qt Creator default)
-############################
-build-*/
-*/build-*/
-*_build/
-out/
-
-############################
-# qmake / Qt generated files
-############################
-Makefile*
-*.o
-*.obj
 moc_*.cpp
 moc_*.h
 qrc_*.cpp
@@ -86,15 +74,10 @@ ui_*.h
 *.moc
 *.qrc.depends
 *.qmake.stash
-*.pro.user
-
-############################
-# Qt translations
-############################
 *.qm
 
 ############################
-# macOS / Linux leftovers (optional)
+# OS leftovers
 ############################
 .DS_Store
 *~
