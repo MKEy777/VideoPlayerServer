@@ -1,0 +1,100 @@
+############################
+# Visual Studio
+############################
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+############################
+# Build output
+############################
+Debug/
+Release/
+x64/
+x86/
+*/Debug/
+*/Release/
+*/x64/
+*/x86/
+
+############################
+# IntelliSense
+############################
+*.VC.db
+*.VC.opendb
+ipch/
+
+############################
+# MFC / Win32
+############################
+*.aps
+*.ncb
+*.pch
+*.obj
+*.idb
+*.ilk
+*.pdb
+*.tlog
+*.log
+
+############################
+# CMake (如果以后用)
+############################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+out/
+
+############################
+# Others
+############################
+*.exe
+*.dll
+*.lib
+*.exp
+
+############################
+# Qt Creator
+############################
+*.pro.user*
+*.qbs.user*
+*.qmlproject.user*
+*.creator.user*
+*.autosave
+
+############################
+# Qt build dirs (Qt Creator default)
+############################
+build-*/
+*/build-*/
+*_build/
+out/
+
+############################
+# qmake / Qt generated files
+############################
+Makefile*
+*.o
+*.obj
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.moc
+*.qrc.depends
+*.qmake.stash
+*.pro.user
+
+############################
+# Qt translations
+############################
+*.qm
+
+############################
+# macOS / Linux leftovers (optional)
+############################
+.DS_Store
+*~
