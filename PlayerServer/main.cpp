@@ -2,6 +2,9 @@
 #include <unistd.h>
 #include <functional>
 #include <type_traits>
+#include <memory.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 class CFunctionBase {
 public:
@@ -26,7 +29,9 @@ private:
 
 class CProcess {
 public:
-    CProcess() : m_func(nullptr), m_pid(-1) {}
+    CProcess() : m_func(nullptr), m_pid(-1) {
+		memset(pipes, 0, sizeof(pipes));
+    }
 
     // 手动管理内存：析构时释放原始指针
     ~CProcess() {
@@ -58,20 +63,81 @@ public:
 
     int CreateSubProcess() {
         if (!m_func) return -1;
+        int ret = socketpair(AF_LOCAL, SOCK_STREAM, 0, pipes);
+		if (ret == -1) return -2;
         pid_t pid = fork();
-        if (pid == -1) return -2;
+        if (pid == -1) return -3;
         if (pid == 0) {
             // 子进程执行业务逻辑
-            int ret = (*m_func)();
-            _exit(ret);
+			close(pipes[1]); // 关闭写
+            pipes[1] = 0;
+            // 子进程只用 pipes[0] 接收来自父进程的信息
+            _exit((*m_func)());
         }
+		// 父进程
+        close(pipes[0]);
+        pipes[0] = 0;
+        // 父进程只用 pipes[1] 向子进程发送信息
         m_pid = pid;
+        return 0;
+    }
+
+    int SendFD(int fd) {
+        struct msghdr msg;
+        iovec iov[2];
+		iov[0].iov_base = (char*)"F";
+		iov[0].iov_len = 1;
+        iov[1].iov_base = (char*)"F";
+        iov[1].iov_len = 1;
+        msg.msg_iov = iov;
+        msg.msg_iovlen = 2;
+
+        // 发送文件描述符
+		cmsghdr* cmsg = (cmsghdr*)calloc(1,CMSG_SPACE(sizeof(int)));
+		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+		cmsg->cmsg_level = SOL_SOCKET;
+		cmsg->cmsg_type = SCM_RIGHTS;
+		*((int*)CMSG_DATA(cmsg)) = fd;
+        msg.msg_control = cmsg;
+		msg.msg_controllen = cmsg->cmsg_len;
+		ssize_t ret = sendmsg(pipes[1], &msg, 0);
+        if (ret == -1) {
+            return -1;
+        }
+        free(cmsg);
+        return 0;
+    }
+
+    int RecvFD(int& fd) {
+        struct msghdr msg;
+        iovec iov[2];
+		char buf[][10] = { "","" };
+        iov[0].iov_base = buf[0];
+        iov[0].iov_len = sizeof(buf[0]);
+        iov[1].iov_base = buf[1];
+        iov[1].iov_len = sizeof(buf[1]);
+        msg.msg_iov = iov;
+        msg.msg_iovlen = 2;
+
+        cmsghdr* cmsg = (cmsghdr*)calloc(1, CMSG_SPACE(sizeof(int)));
+        cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+        cmsg->cmsg_level = SOL_SOCKET;
+        cmsg->cmsg_type = SCM_RIGHTS;
+        msg.msg_control = cmsg;
+        msg.msg_controllen = cmsg->cmsg_len;
+        ssize_t ret = recvmsg(pipes[0], &msg, 0);
+        if (ret == -1) {
+            free(cmsg);
+            return -1;
+        }
+		fd = *(int*)CMSG_DATA(cmsg);
         return 0;
     }
 
 private:
     CFunctionBase* m_func;
     pid_t m_pid;
+    int pipes[2];
 };
 
 // --- 业务代码 ---
@@ -90,10 +156,18 @@ int main() {
     CProcess proclog, proccliets;
 
     proclog.SetEntryFunction(CreateLogServer, &proclog);
-    proclog.CreateSubProcess();
+    int ret = proclog.CreateSubProcess();
+    if(ret!=0) {
+        //std::cout << -1 << std::endl;
+        return -1;
+	}
 
     proccliets.SetEntryFunction(CreateClientServer, &proccliets);
-    proccliets.CreateSubProcess();
+    ret= proccliets.CreateSubProcess();
+    if (ret != 0) {
+        //std::cout << -2 << std::endl;
+        return -2;
+    }
     //生产环境下这里通常需要 wait() 子进程，否则主进程退出后子进程会托管给 init
     return 0;
 }
