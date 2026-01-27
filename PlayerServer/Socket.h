@@ -87,6 +87,12 @@ public:
         len_ += n;
         ensure_zterm();
     }
+    void append(char c) {
+        reserve(len_ + 1);
+        buf_[len_] = c;
+        len_++;
+        buf_[len_] = '\0';
+    }
 
     void append(const char* s) {
         if (!s) return;
@@ -99,6 +105,7 @@ public:
 
     Buffer& operator+=(const char* s) { append(s); return *this; }
     Buffer& operator+=(const std::string& s) { append(s); return *this; }
+    Buffer& operator+=(char c) {append(c);return *this;}
 
 private:
     void ensure_zterm() {

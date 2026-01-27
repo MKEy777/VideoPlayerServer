@@ -24,7 +24,7 @@ enum LogLevel {
 
 class LogInfo {
 public:
-    LogInfo(
+    LogInfo(//格式化构造函数
         const char* file,
         int line,
         const char* func,
@@ -35,7 +35,7 @@ public:
         ...
     );
 
-    LogInfo(
+    LogInfo(//流式构造函数
         const char* file,
         int line,
         const char* func,
@@ -44,7 +44,7 @@ public:
         int level
     );
 
-    LogInfo(
+	LogInfo(//二进制数据构造函数
         const char* file,
         int line,
         const char* func,
@@ -57,11 +57,9 @@ public:
 
     ~LogInfo();
 
-    operator Buffer() const {
-        return m_buf;
-    }
+    operator Buffer() const {return m_buf;}
 
-    template<typename T>
+    template<typename T>//将任意类型 T 转换为字符串。
     LogInfo& operator<<(const T& data) {
         std::stringstream stream;
         stream << data;
@@ -93,7 +91,6 @@ public:
 
     CLoggerServer(const CLoggerServer&) = delete;
     CLoggerServer& operator=(const CLoggerServer&) = delete;
-
 public:
     // 启动日志服务器（创建目录/文件/epoll/socket/线程）
     int Start() {
@@ -137,11 +134,10 @@ public:
 
         return 0;
     }
-
     // 日志线程函数：epoll 等待连接/接收日志并写入文件
     int ThreadFunc() {
         EPEvents events; // epoll 返回的事件数组/容器
-        std::map<int, CSocketBase*> mapClients; // 保存所有已连接的客户端（key 通常是 fd）
+        std::map<int, CSocketBase*> mapClients; // 保存所有已连接的客户端（key 是 fd）
 
         // 主循环：线程有效 + epoll 正常 + server 存在
         while (m_thread.isValid() && m_server) {
@@ -160,15 +156,12 @@ public:
 
                 // 可读事件
                 if (events[i].events & EPOLLIN) {
-
                     // 如果是服务端 socket 可读：表示有新连接进来（accept）
                     if (events[i].data.ptr == m_server) {
                         CSocketBase* pClient = nullptr;
-
                         // Link：服务端 accept 出一个新客户端连接对象
                         if (m_server->Link(&pClient) < 0)
                             continue;
-
                         // 将新客户端 fd 加入 epoll 监听（关注可读和错误）
                         if (m_epoll.Add(*pClient,
                             EpollData(pClient), // ptr 存放连接对象指针，方便回调时拿到
@@ -176,29 +169,24 @@ public:
                             delete pClient;
                             continue;
                         }
-
                         // 保存到 map，便于统一释放/管理
                         mapClients[*pClient] = pClient;
                     }
                     else {
                         // 普通客户端 socket 可读：表示有日志数据发送过来
-                        CSocketBase* pClient =
-                            (CSocketBase*)events[i].data.ptr;
+                        CSocketBase* pClient =(CSocketBase*)events[i].data.ptr;
 
                         // 接收缓存（预分配 1MB，具体有效数据长度依赖 Recv 的实现）
                         Buffer data(1024 * 1024);
 
-                        // 从客户端读取日志内容
-                        int r = pClient->Recv(data);
+                        int r = pClient->Recv(data);// 从客户端读取日志内容
 
-                        if (r <= 0) {
-                            // r<=0：对端关闭/异常，删除连接对象并在 map 标记为空
+                        if (r <= 0) {// r<=0：对端关闭/异常，删除连接对象并在 map 标记为空
                             delete pClient;
                             mapClients[*pClient] = nullptr;
                         }
                         else {
-                            // 写入日志文件（同时可选打印到控制台）
-                            WriteLog(data);
+                            WriteLog(data);// 写入日志文件
                         }
                     }
                 }
@@ -213,18 +201,20 @@ public:
 
         return 0;
     }
-
     // 释放 server，关闭 epoll，停止线程
     int Close() {
         if (m_server) {
             delete m_server;
             m_server = nullptr;
         }
+        if (m_file) {
+            fclose(m_file);
+            m_file = nullptr;
+        }
         m_epoll.Close();
         m_thread.Stop();
         return 0;
     }
-
 public:
     // 供其他线程/进程调用：把 LogInfo 通过本地 socket 发给日志服务器
     static void Trace(const LogInfo& info) {
@@ -239,52 +229,51 @@ public:
 #endif
                 return;
             }
+            if (client.Link() != 0) {
+                client.Close(); // 连接失败需清理
+                return;
+            }
         }
 
         // 发送日志内容到日志服务器（info 可隐式转 Buffer）
         client.Send(info);
     }
-
     // 获取当前时间字符串：用于日志文件名/日志头等
     static Buffer GetTimeStr() {
         Buffer result(128);
         timeb tmb;
-        ftime(&tmb); // 毫秒级时间
-
-        tm* pTm = localtime(&tmb.time);
-
-        // 格式：YYYY-MM-DD HH-MM-SS mmm
-        int nSize = snprintf(
+        ftime(&tmb); // 毫秒级时间（tmb.time 秒 + tmb.millitm 毫秒）
+        tm tmv{};
+        localtime_r(&tmb.time, &tmv); // Linux 线程安全：把本地时间写入 tmv
+       
+        int nSize = snprintf( // 格式：YYYY-MM-DD HH-MM-SS mmm
             result,
             result.size(),
             "%04d-%02d-%02d %02d-%02d-%02d %03d",
-            pTm->tm_year + 1900,
-            pTm->tm_mon + 1,
-            pTm->tm_mday,
-            pTm->tm_hour,
-            pTm->tm_min,
-            pTm->tm_sec,
+            tmv.tm_year + 1900,
+            tmv.tm_mon + 1,
+            tmv.tm_mday,
+            tmv.tm_hour,
+            tmv.tm_min,
+            tmv.tm_sec,
             tmb.millitm
         );
         result.resize(nSize); // 设置有效长度
         return result;
     }
-
 private:
     // 将接收到的日志内容写入文件（并 flush）
     void WriteLog(const Buffer& data) {
-        if (!m_file)
-            return;
+        if (!m_file) return;
 
         // 按 Buffer 的有效长度写入
         fwrite((const char*)data, 1, data.size(), m_file);
-
         // 立即刷新到磁盘（安全但高频会影响性能）
         fflush(m_file);
 
 #ifdef _DEBUG
         // 调试输出到控制台（假设 data 可当作 C 字符串）
-        printf("%s", (char*)data);
+        printf("%s", data.data());
 #endif
     }
 
@@ -293,7 +282,7 @@ private:
     CEpoll       m_epoll;    // epoll 事件复用
     CSocketBase* m_server;   // 本地 socket 服务端（接受连接）
     Buffer       m_path;     // 日志文件路径
-    FILE* m_file;            // 日志文件句柄
+    FILE*        m_file;     // 日志文件句柄
 };
 
 /* ================= 宏定义 ================= */
