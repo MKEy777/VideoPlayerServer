@@ -1,5 +1,5 @@
 ############################
-# Visual Studio 2022/2024 (Windows)
+# Visual Studio 2022/2024 (Windows) - .vcxproj
 ############################
 .vs/
 *.suo
@@ -7,14 +7,14 @@
 *.userosscache
 *.sln.docstates
 
-# VS CMake / Remote Linux cache
-CMakeSettings.json
-CMakeUserPresets.json
-CMakePresets.json
-out/
+# VS browse / IntelliSense
+*.VC.db
+*.VC.opendb
+*.ipch
+ipch/
 
 ############################
-# Build output (common)
+# MSBuild / VS build output (local)
 ############################
 Debug/
 Release/
@@ -22,22 +22,24 @@ x64/
 x86/
 ARM/
 ARM64/
-build/
-build-*/
-*_build/
+Win32/
+bin/
+obj/
+out/
+
 */Debug/
 */Release/
 */x64/
 */x86/
 */ARM/
 */ARM64/
-*/build/
-*/build-*/
+*/Win32/
+*/bin/
+*/obj/
 */out/
-*/_build/
 
 ############################
-# Visual Studio MSBuild intermediates
+# MSVC intermediate files
 ############################
 *.aps
 *.ncb
@@ -53,56 +55,23 @@ build-*/
 *.Build.CppClean.log
 
 ############################
-# IntelliSense / VS database
+# Visual Studio Linux / Remote build integration
 ############################
-*.VC.db
-*.VC.opendb
-*.ipch
-ipch/
-.vscode/
-
-############################
-# CMake (local + VS-generated)
-############################
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-compile_commands.json
-
-############################
-# VS Remote Linux / WSL build artifacts
-############################
-# VS Remote Linux often uses these folders (depending on configuration)
-.vs-linux/
+# VS remote/WSL caches (names can vary by version)
 .vs/RemoteCache/
-RemoteBuild/
-remote_build/
-linux-build/
-wsl-build/
+.vs/RemoteTargets/
+.vs/RemoteDebug/
+.vs/SSH/
+.vs/linux/
+.vs-linux/
+
+# Sometimes VS drops per-user remote connection info here
+.vsconfig
+*.VC.VC.opendb
 
 ############################
-# Ninja / Meson / Make (Linux toolchains)
+# Linux build artifacts (if accidentally generated in repo)
 ############################
-*.ninja
-*.ninja_deps
-*.ninja_log
-build.ninja
-.ninja*
-meson-private/
-meson-logs/
-meson-info/
-
-############################
-# Binaries & libs (Windows + Linux)
-############################
-# Windows
-*.exe
-*.dll
-*.lib
-*.exp
-
-# Linux
 *.o
 *.a
 *.so
@@ -110,21 +79,21 @@ meson-info/
 *.out
 
 ############################
-# Qt Creator / Qt generated (optional)
+# Tooling / editors
 ############################
-*.pro.user*
-*.qbs.user*
-*.qmlproject.user*
-*.creator.user*
-*.autosave
-moc_*.cpp
-moc_*.h
-qrc_*.cpp
-ui_*.h
-*.moc
-*.qrc.depends
-*.qmake.stash
-*.qm
+.vscode/
+
+############################
+# CMake (only if you also use CMake alongside vcxproj)
+############################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CMakeSettings.json
+CMakePresets.json
+CMakeUserPresets.json
+compile_commands.json
 
 ############################
 # OS leftovers
