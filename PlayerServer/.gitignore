@@ -1,0 +1,102 @@
+############################
+# Visual Studio (Windows)
+############################
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+############################
+# Build output
+############################
+Debug/
+Release/
+x64/
+x86/
+build-*/
+*/Debug/
+*/Release/
+*/x64/
+*/x86/
+out/
+*_build/
+
+############################
+# IntelliSense / VS database
+############################
+*.VC.db
+*.VC.opendb
+*.ipch
+ipch/
+
+############################
+# MSVC intermediate files
+############################
+*.aps
+*.ncb
+*.pch
+*.obj
+*.idb
+*.ilk
+*.pdb
+*.tlog
+*.log
+
+############################
+# CMake
+############################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+############################
+# Binaries & libs
+############################
+*.exe
+*.dll
+*.lib
+*.exp
+
+############################
+# Qt Creator / Qt generated
+############################
+*.pro.user*
+*.qbs.user*
+*.qmlproject.user*
+*.creator.user*
+*.autosave
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.moc
+*.qrc.depends
+*.qmake.stash
+*.qm
+
+############################
+# OS leftovers
+############################
+.DS_Store
+*~
+
+############################
+# Linux-specific (added for cross-platform support)
+############################
+# Linux build directories
+build/
+out/
+*_build/
+
+# Linux object files and libraries
+*.o
+*.a
+*.so
+*.so.*
+*.a.*
+
+# Linux-specific build tools
+*.make
+*.ninja
