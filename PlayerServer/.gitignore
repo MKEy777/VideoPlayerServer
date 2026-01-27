@@ -1,5 +1,5 @@
 ############################
-# Visual Studio (Windows)
+# Visual Studio 2022/2024 (Windows)
 ############################
 .vs/
 *.suo
@@ -7,31 +7,37 @@
 *.userosscache
 *.sln.docstates
 
+# VS CMake / Remote Linux cache
+CMakeSettings.json
+CMakeUserPresets.json
+CMakePresets.json
+out/
+
 ############################
-# Build output
+# Build output (common)
 ############################
 Debug/
 Release/
 x64/
 x86/
+ARM/
+ARM64/
+build/
 build-*/
+*_build/
 */Debug/
 */Release/
 */x64/
 */x86/
-out/
-*_build/
+*/ARM/
+*/ARM64/
+*/build/
+*/build-*/
+*/out/
+*/_build/
 
 ############################
-# IntelliSense / VS database
-############################
-*.VC.db
-*.VC.opendb
-*.ipch
-ipch/
-
-############################
-# MSVC intermediate files
+# Visual Studio MSBuild intermediates
 ############################
 *.aps
 *.ncb
@@ -42,25 +48,69 @@ ipch/
 *.pdb
 *.tlog
 *.log
+*.lastbuildstate
+*.unsuccessfulbuild
+*.Build.CppClean.log
 
 ############################
-# CMake
+# IntelliSense / VS database
+############################
+*.VC.db
+*.VC.opendb
+*.ipch
+ipch/
+.vscode/
+
+############################
+# CMake (local + VS-generated)
 ############################
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+compile_commands.json
 
 ############################
-# Binaries & libs
+# VS Remote Linux / WSL build artifacts
 ############################
+# VS Remote Linux often uses these folders (depending on configuration)
+.vs-linux/
+.vs/RemoteCache/
+RemoteBuild/
+remote_build/
+linux-build/
+wsl-build/
+
+############################
+# Ninja / Meson / Make (Linux toolchains)
+############################
+*.ninja
+*.ninja_deps
+*.ninja_log
+build.ninja
+.ninja*
+meson-private/
+meson-logs/
+meson-info/
+
+############################
+# Binaries & libs (Windows + Linux)
+############################
+# Windows
 *.exe
 *.dll
 *.lib
 *.exp
 
+# Linux
+*.o
+*.a
+*.so
+*.so.*
+*.out
+
 ############################
-# Qt Creator / Qt generated
+# Qt Creator / Qt generated (optional)
 ############################
 *.pro.user*
 *.qbs.user*
@@ -80,23 +130,6 @@ ui_*.h
 # OS leftovers
 ############################
 .DS_Store
+Thumbs.db
+Desktop.ini
 *~
-
-############################
-# Linux-specific (added for cross-platform support)
-############################
-# Linux build directories
-build/
-out/
-*_build/
-
-# Linux object files and libraries
-*.o
-*.a
-*.so
-*.so.*
-*.a.*
-
-# Linux-specific build tools
-*.make
-*.ninja

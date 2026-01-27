@@ -1,3 +1,135 @@
-/.vs
+############################
+# Visual Studio 2022/2024 (Windows)
+############################
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# VS CMake / Remote Linux cache
+CMakeSettings.json
+CMakeUserPresets.json
+CMakePresets.json
+out/
+
+############################
+# Build output (common)
+############################
+Debug/
+Release/
+x64/
+x86/
+ARM/
+ARM64/
+build/
+build-*/
+*_build/
+*/Debug/
+*/Release/
+*/x64/
+*/x86/
+*/ARM/
+*/ARM64/
+*/build/
+*/build-*/
+*/out/
+*/_build/
+
+############################
+# Visual Studio MSBuild intermediates
+############################
+*.aps
+*.ncb
+*.pch
+*.obj
+*.idb
+*.ilk
+*.pdb
+*.tlog
+*.log
+*.lastbuildstate
+*.unsuccessfulbuild
+*.Build.CppClean.log
+
+############################
+# IntelliSense / VS database
+############################
+*.VC.db
+*.VC.opendb
 *.ipch
-/.vs
+ipch/
+.vscode/
+
+############################
+# CMake (local + VS-generated)
+############################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+############################
+# VS Remote Linux / WSL build artifacts
+############################
+# VS Remote Linux often uses these folders (depending on configuration)
+.vs-linux/
+.vs/RemoteCache/
+RemoteBuild/
+remote_build/
+linux-build/
+wsl-build/
+
+############################
+# Ninja / Meson / Make (Linux toolchains)
+############################
+*.ninja
+*.ninja_deps
+*.ninja_log
+build.ninja
+.ninja*
+meson-private/
+meson-logs/
+meson-info/
+
+############################
+# Binaries & libs (Windows + Linux)
+############################
+# Windows
+*.exe
+*.dll
+*.lib
+*.exp
+
+# Linux
+*.o
+*.a
+*.so
+*.so.*
+*.out
+
+############################
+# Qt Creator / Qt generated (optional)
+############################
+*.pro.user*
+*.qbs.user*
+*.qmlproject.user*
+*.creator.user*
+*.autosave
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.moc
+*.qrc.depends
+*.qmake.stash
+*.qm
+
+############################
+# OS leftovers
+############################
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
