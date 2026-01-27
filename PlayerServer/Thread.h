@@ -85,7 +85,7 @@ public:
     // 发送 SIGUSR1 控制线程暂停/恢复
     int Pause()
     {
-        if (m_thread != 0) return -1;
+        if (m_thread == 0) return -1;
 
         // 如果已经暂停，则恢复
         if (m_bpaused)
@@ -135,9 +135,7 @@ public:
     {
         return m_thread == 0;
     }
-
 private:
-
     // 线程入口函数（静态）
     static void* ThreadEntry(void* arg)
     {
@@ -214,7 +212,6 @@ private:
             }
         }
     }
-
 private:
     CFunctionBase* m_function;               // 封装的线程执行函数
     pthread_t m_thread;                      // 线程ID

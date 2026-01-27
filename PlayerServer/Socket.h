@@ -8,23 +8,38 @@
 #include <fcntl.h>
 #include <vector>
 #include <cstring>
-
+//#include <algorithm>
 
 class Buffer {
 public:
     Buffer() { ensure_zterm(); }
 
-    explicit Buffer(size_t n) : buf_(n+1), len_(n) { ensure_zterm(); }
+    // 预留容量 n（不是有效长度）
+    explicit Buffer(size_t n) {
+        reserve(n);
+        len_ = 0;
+        ensure_zterm();
+    }
 
     Buffer(const char* s) { assign_cstr(s); }
     Buffer(const std::string& s) { assign_cstr(s.c_str()); }
 
-    size_t size() const noexcept { return len_; }// 有效字节数
+    size_t size() const noexcept { return len_; }          // 有效字节数
     bool empty() const noexcept { return len_ == 0; }
 
+    size_t capacity() const noexcept {
+        return buf_.empty() ? 0 : (buf_.size() - 1);       // 可用容量（不含 '\0'）
+    }
+
+    void reserve(size_t n) {
+        if (buf_.size() < n + 1) buf_.resize(n + 1);
+        ensure_zterm();
+    }
+
+    // 设定有效长度（常用于 Recv 后：resize(r)）
     void resize(size_t n) {
         len_ = n;
-        if (buf_.size() < len_+1) buf_.resize(len_+1);
+        if (buf_.size() < len_ + 1) buf_.resize(len_ + 1);
         buf_[len_] = '\0';
     }
 
@@ -34,20 +49,24 @@ public:
         buf_[0] = '\0';
     }
 
-    char* data() noexcept { return buf_.data(); }          // 可写指针
+    // 用于“写入”的指针（Socket Recv 典型会用这个）
+    char* data() noexcept { return buf_.data(); }
     const char* data() const noexcept { return buf_.data(); }
 
-    // 
+    // 额外提供：从 len_ 后开始写
+    char* writable_tail(size_t need) {
+        reserve(len_ + need);
+        return buf_.data() + len_;
+    }
+
     operator char* () noexcept { return data(); }
     operator const char* () const noexcept { return data(); }
 
-    // ====== 文本场景（ip/path）用 ======
     const char* c_str() const noexcept {
-        // const 场景下也要保证末尾 '\0'，所以 buf_ / len_ 需要可变
         const_cast<Buffer*>(this)->ensure_zterm();
         return buf_.data();
     }
-    //字符串内容拷贝
+
     void assign_cstr(const char* s) {
         if (!s) { clear(); return; }
         size_t n = std::strlen(s);
@@ -56,18 +75,41 @@ public:
         ensure_zterm();
     }
 
-    std::string to_string() const { return std::string(data(), data() + len_); }
+    std::string to_string() const {
+        return std::string(data(), data() + len_);
+    }
+
+    // ====== 追加 / 拼接（适配 LogInfo）======
+    void append(const char* s, size_t n) {
+        if (!s || n == 0) return;
+        reserve(len_ + n);
+        std::memcpy(buf_.data() + len_, s, n);
+        len_ += n;
+        ensure_zterm();
+    }
+
+    void append(const char* s) {
+        if (!s) return;
+        append(s, std::strlen(s));
+    }
+
+    void append(const std::string& s) {
+        append(s.data(), s.size());
+    }
+
+    Buffer& operator+=(const char* s) { append(s); return *this; }
+    Buffer& operator+=(const std::string& s) { append(s); return *this; }
 
 private:
     void ensure_zterm() {
-        // 确保 buf_ 至少有 len_+1 空间放 '\0'，但不改变 len_
+        if (buf_.empty()) buf_.resize(1);
         if (buf_.size() < len_ + 1) buf_.resize(len_ + 1);
         buf_[len_] = '\0';
     }
 
 private:
     std::vector<char> buf_;
-	size_t len_{ 0 };// 逻辑长度
+    size_t len_{ 0 }; // 逻辑长度（有效字节数）
 };
 
 enum SockAttr {
@@ -134,7 +176,7 @@ public:
     }
 
     virtual ~CSocketBase() { Close(); }
-
+    operator int() const noexcept { return m_socket; }
 public:
     // 初始化：服务器创建/bind/listen；客户端创建
     virtual int Init(const CSockParam& param) = 0;
@@ -165,9 +207,8 @@ class CLocalSocket : public CSocketBase {
 public:
     CLocalSocket() : CSocketBase() {}
     CLocalSocket(int sock) : CSocketBase() { m_socket = sock; }
-
     virtual ~CLocalSocket() { Close(); } // 析构自动关闭
-
+   
 public:
     virtual int Init(const CSockParam& param) {
         if (m_status != 0) return -1; // 已初始化过
