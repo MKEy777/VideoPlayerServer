@@ -99,9 +99,9 @@ public:
 
         // 确保 log 目录存在且可读写，不存在则创建
         if (access("log", W_OK | R_OK) != 0) {
-            mkdir("log", S_IRUSR | S_IWUSR |
-                S_IRGRP | S_IWGRP |
-                S_IROTH);
+            mkdir("log", S_IRUSR | S_IWUSR | S_IXUSR |
+                S_IRGRP | S_IWGRP | S_IXGRP |
+                S_IROTH | S_IXOTH);
         }
 
         // 打开日志文件（写入并可读）

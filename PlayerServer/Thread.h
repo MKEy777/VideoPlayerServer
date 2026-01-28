@@ -58,8 +58,8 @@ public:
         if (ret != 0) return -2;
 
         // 设置线程作用域
-        ret = pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS);
-        if (ret != 0) return -3;
+        /*ret = pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS);
+        if (ret != 0) return -3;*/
 
         // 创建线程，入口为静态函数
         /*
