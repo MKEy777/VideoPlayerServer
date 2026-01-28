@@ -100,7 +100,7 @@ LogInfo::LogInfo(
 	if (k != 0) {
 		for (size_t j = 0; j < 16 - k; j++) m_buf += "   ";
 		m_buf += "\t; ";
-		for (size_t j = i - k; j <= i; j++) {
+		for (size_t j = i - k; j < i; ++j) {
 			if ((Data[j] & 0xFF) > 31 && ((Data[j] & 0xFF) < 0x7F)) {
 				m_buf += Data[j];
 			}

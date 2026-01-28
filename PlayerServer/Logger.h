@@ -248,7 +248,7 @@ public:
        
         int nSize = snprintf( // 格式：YYYY-MM-DD HH-MM-SS mmm
             result,
-            result.size(),
+            128,
             "%04d-%02d-%02d %02d-%02d-%02d %03d",
             tmv.tm_year + 1900,
             tmv.tm_mon + 1,
@@ -304,14 +304,14 @@ private:
 #define TRACEF(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, \
     getpid(), pthread_self(), LOG_FATAL, __VA_ARGS__))
 
-// 流式日志
+// 流式日志operator<<
 #define LOGI LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_INFO)
 #define LOGD LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_DEBUG)
 #define LOGW LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_WARNING)
 #define LOGE LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_ERROR)
 #define LOGF LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_FATAL)
 
-// 内存 dump
+// 内存十六进制 dump
 #define DUMPI(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_INFO, data, size)
 #define DUMPD(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_DEBUG, data, size)
 #define DUMPW(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_WARNING, data, size)
