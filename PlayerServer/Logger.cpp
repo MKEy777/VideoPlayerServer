@@ -10,7 +10,7 @@ LogInfo::LogInfo(
 	const char sLevel[][8] = {"INFO","DEBUG","WARNING","ERROR","FATAL"};
 	char* buf = NULL;
 	bAuto = false;
-	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%d>(%s) ",
+	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%lu>(%s) ",
 		file, line, sLevel[level],
 		(char*)CLoggerServer::GetTimeStr(), pid, tid, func);
 	if (count > 0) {
@@ -35,7 +35,7 @@ LogInfo::LogInfo(const char* file, int line, const char* func, pid_t pid, pthrea
 	bAuto = true;
 	const char sLevel[][8] = {"INFO","DEBUG","WARNING","ERROR","FATAL"};
 	char* buf = NULL;
-	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%d>(%s) ",
+	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%lu>(%s) ",
 		file, line, sLevel[level],
 		(char*)CLoggerServer::GetTimeStr(), pid, tid, func);
 	if (count > 0) {
@@ -53,7 +53,7 @@ LogInfo::LogInfo(
 	const char sLevel[][8] = {"INFO","DEBUG","WARNING","ERROR","FATAL"};
 	char* buf = NULL;
 	bAuto = true;
-	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%d>(%s)\n",
+	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%lu>(%s)\n",
 		file, line, sLevel[level],
 		(char*)CLoggerServer::GetTimeStr(), pid, tid, func);
 	if (count > 0) {
@@ -74,18 +74,11 @@ LogInfo::LogInfo(
 			m_buf += "\t; ";
 			char buf[17] = "";
 			memcpy(buf, Data + i - 15, 16);
-			for (int j = 0; j < 16; j++)
-				if ((buf[j] < 32) && (buf[j] >= 0))buf[j] = '.';
+			for (int j = 0; j < 16; j++) {
+				unsigned char c = (unsigned char)buf[j]; // ×ªÎªÎÞ·ûºÅÅÐ¶Ï
+				if (c < 32 || c > 126) buf[j] = '.';
+			}
 			m_buf += buf;
-
-			/*for (size_t j = i - 15; j <= i; j++) {
-				if ((Data[j] & 0xFF) > 31 && ((Data[j] & 0xFF) < 0x7F)) {
-					m_buf += Data[i];
-				}
-				else {
-					m_buf += '.';
-				}
-			}*/
 			m_buf += "\n";
 		}
 	}

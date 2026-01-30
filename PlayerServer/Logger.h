@@ -78,7 +78,7 @@ class CLoggerServer {
 public:
     CLoggerServer()
         : m_thread(&CLoggerServer::ThreadFunc, this) // 日志线程：后台写文件
-        , m_server(nullptr)                          // 本地socket服务端指针
+        , m_server(nullptr)// 本地socket服务端指针
     {
         // 生成日志文件路径：./log/<时间>.log
         m_path = Buffer(std::string("./log/") + GetTimeStr().c_str() + ".log");
@@ -128,13 +128,13 @@ public:
 
         if (m_epoll.Add(*m_server, EpollData(m_server), EPOLLIN | EPOLLERR) != 0) {
             Close();
-            return -7;
+            return -6;
         }
 
         // 启动日志线程：进入 ThreadFunc epoll 循环
         if (m_thread.Start() != 0) {
             Close();
-            return -6;
+            return -7;
         }
 
         return 0;
@@ -145,7 +145,7 @@ public:
         std::map<int, CSocketBase*> mapClients; // 保存所有已连接的客户端（key 是 fd）
 
         // 主循环：线程有效 + epoll 正常 + server 存在
-        while (!m_thread.isValid() && m_server) {
+        while (m_thread.isValid() && m_server) {
 
             // 等待事件（timeout=1）
             ssize_t ret = m_epoll.WaitEvents(events, 1);
@@ -189,8 +189,6 @@ public:
 #ifdef _DEBUG
                         printf("[Debug] Recv fd=%d, ret=%d\n", (int)(*pClient), r);
 #endif // DEBUG
-                    
-
                         if (r <= 0) {
                             printf("[Debug] Client disconnected!\n");
                             delete pClient;
@@ -234,10 +232,10 @@ public:
         // 若当前线程还没连接 server.sock，则先 Init 连接
         if (client == -1) {
             if (client.Init(CSockParam("./log/server.sock", 0)) != 0) {
-//#ifdef _DEBUG
+#ifdef _DEBUG
                 printf("%s(%d):[%s] socket init failed\n",
                     __FILE__, __LINE__, __FUNCTION__);
-//#endif
+#endif
                 return;
             }
             if (client.Link() != 0) {
@@ -247,7 +245,7 @@ public:
             }
         }
 
-        // 发送日志内容到日志服务器（info 可隐式转 Buffer）
+        // 发送日志内容到日志服务器
         client.Send(info);
     }
     // 获取当前时间字符串：用于日志文件名/日志头等

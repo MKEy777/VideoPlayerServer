@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <functional>
-
+#include <type_traits>
 
 class CFunctionBase {
 public:

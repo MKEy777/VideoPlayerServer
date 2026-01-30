@@ -226,6 +226,7 @@ public:
 
         if (m_socket == -1)
             m_socket = socket(PF_LOCAL, type, 0); // 创建Unix域socket
+        else m_status = 2;
         if (m_socket == -1) return -2;
 
         int ret = 0;
@@ -245,7 +246,8 @@ public:
             if (ret == -1) return -6;
         }
 
-        m_status = 1; // 初始化完成
+        if (m_status == 0)
+            m_status = 1; // 初始化完成
         return 0;
     }
 
@@ -262,17 +264,14 @@ public:
             int fd = accept(m_socket, param.addrun(), &len); // 接受连接
             if (fd == -1) return -3;
 
-            CLocalSocket* pNewClient = new CLocalSocket(fd);
-            *pClient = pNewClient;
+            *pClient = new CLocalSocket(fd);
             if (*pClient == NULL) return -4;
-
             ret = (*pClient)->Init(param);   // 初始化客户端socket对象
             if (ret != 0) {
                 delete (*pClient);
                 *pClient = NULL;
                 return -5;
             }
-            pNewClient->m_status = 2;
         }
         else { // 客户端：connect
             ret = connect(m_socket, m_param.addrun(), sizeof(sockaddr_un));

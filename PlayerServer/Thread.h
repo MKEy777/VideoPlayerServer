@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <errno.h>
 
+
 class CThread
 {
 public:
@@ -133,7 +134,7 @@ public:
     // 判断线程是否未运行
     bool isValid() const
     {
-        return m_thread == 0;
+        return m_thread != 0;
     }
 private:
     // 线程入口函数（静态）
