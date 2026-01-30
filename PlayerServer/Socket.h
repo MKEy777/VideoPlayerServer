@@ -197,6 +197,7 @@ public:
     virtual int Close() {
         m_status = 3;
         if (m_socket != -1) {
+            unlink(m_param.ip.c_str());
             int fd = m_socket;
             m_socket = -1;
             close(fd);
@@ -299,6 +300,8 @@ public:
 
     // >0 收到字节数；0 没有数据但无错；<0 错误/断开
     virtual int Recv(Buffer& data) {
+        printf("%s(%d):[%s] RECV\n",
+            __FILE__, __LINE__, __FUNCTION__);
         if (m_status < 2 || (m_socket == -1)) return -1; // 未连接/无效fd
 
         ssize_t len = read(m_socket, data, data.size()); // 读入预分配缓冲(data.size())

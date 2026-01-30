@@ -7,9 +7,7 @@ LogInfo::LogInfo(
 )
 {
 
-	const char sLevel[][8] = {
-		"INFO","DEBUG","WARNING","ERROR","FATAL"
-	};
+	const char sLevel[][8] = {"INFO","DEBUG","WARNING","ERROR","FATAL"};
 	char* buf = NULL;
 	bAuto = false;
 	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%d>(%s) ",
@@ -35,9 +33,7 @@ LogInfo::LogInfo(
 LogInfo::LogInfo(const char* file, int line, const char* func, pid_t pid, pthread_t tid, int level)
 {//自己主动发的 流式的日志
 	bAuto = true;
-	const char sLevel[][8] = {
-		"INFO","DEBUG","WARNING","ERROR","FATAL"
-	};
+	const char sLevel[][8] = {"INFO","DEBUG","WARNING","ERROR","FATAL"};
 	char* buf = NULL;
 	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%d>(%s) ",
 		file, line, sLevel[level],
@@ -54,11 +50,9 @@ LogInfo::LogInfo(
 	void* pData, size_t nSize
 )
 {
-	const char sLevel[][8] = {
-		"INFO","DEBUG","WARNING","ERROR","FATAL"
-	};
+	const char sLevel[][8] = {"INFO","DEBUG","WARNING","ERROR","FATAL"};
 	char* buf = NULL;
-	bAuto = false;
+	bAuto = true;
 	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%d>(%s)\n",
 		file, line, sLevel[level],
 		(char*)CLoggerServer::GetTimeStr(), pid, tid, func);

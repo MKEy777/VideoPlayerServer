@@ -83,7 +83,7 @@ public:
         // 生成日志文件路径：./log/<时间>.log
         m_path = Buffer(std::string("./log/") + GetTimeStr().c_str() + ".log");
 
-        // 输出当前日志文件路径（调试用）
+        // 输出当前日志文件路径
         printf("%s(%d):[%s] path=%s\n",
             __FILE__, __LINE__, __FUNCTION__, (char*)m_path);
     }
@@ -124,6 +124,11 @@ public:
             (int)SOCK_ISSERVER)) != 0) {
             Close();
             return -5;
+        }
+
+        if (m_epoll.Add(*m_server, EpollData(m_server), EPOLLIN | EPOLLERR) != 0) {
+            Close();
+            return -7;
         }
 
         // 启动日志线程：进入 ThreadFunc epoll 循环
@@ -173,20 +178,26 @@ public:
                         mapClients[*pClient] = pClient;
                     }
                     else {
-                        // 普通客户端 socket 可读：表示有日志数据发送过来
-                        CSocketBase* pClient =(CSocketBase*)events[i].data.ptr;
+                        // 普通客户端 socket 可读
+                        CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
 
-                        // 接收缓存（预分配 1MB，具体有效数据长度依赖 Recv 的实现）
                         Buffer data(1024 * 1024);
+                        data.resize(1024 * 1024); // 关键修复
 
-                        int r = pClient->Recv(data);// 从客户端读取日志内容
+                        int r = pClient->Recv(data);
 
-                        if (r <= 0) {// r<=0：对端关闭/异常，删除连接对象并在 map 标记为空
+                        // === 调试打印 ===
+                        printf("[Debug] Recv fd=%d, ret=%d\n", (int)(*pClient), r);
+                        // ===============
+
+                        if (r <= 0) {
+                            printf("[Debug] Client disconnected!\n");
                             delete pClient;
                             mapClients[*pClient] = nullptr;
                         }
                         else {
-                            WriteLog(data);// 写入日志文件
+                            printf("[Debug] Log received: %s\n", data.data()); // 打印收到的内容
+                            WriteLog(data);
                         }
                     }
                 }
@@ -219,17 +230,17 @@ public:
     // 供其他线程/进程调用：把 LogInfo 通过本地 socket 发给日志服务器
     static void Trace(const LogInfo& info) {
         static thread_local CLocalSocket client; // 每线程一个连接，避免锁竞争
-
         // 若当前线程还没连接 server.sock，则先 Init 连接
         if (client == -1) {
             if (client.Init(CSockParam("./log/server.sock", 0)) != 0) {
-#ifdef _DEBUG
+//#ifdef _DEBUG
                 printf("%s(%d):[%s] socket init failed\n",
                     __FILE__, __LINE__, __FUNCTION__);
-#endif
+//#endif
                 return;
             }
             if (client.Link() != 0) {
+                printf("%s(%d):[%s] Connect LogServer failed!\n", __FILE__, __LINE__, __FUNCTION__);
                 client.Close(); // 连接失败需清理
                 return;
             }

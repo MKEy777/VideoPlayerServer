@@ -59,6 +59,7 @@ int main()
 		printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
 		return -1;
 	}
+	usleep(100 * 1000);
 	LogTest();
 	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
 	CThread thread(LogTest);
@@ -70,7 +71,7 @@ int main()
 		return -2;
 	}
 	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
-	usleep(100 * 000);
+	usleep(500 * 1000);
 	int fd = open("./test.txt", O_RDWR | O_CREAT | O_APPEND);
 	printf("%s(%d):<%s> fd=%d\n", __FILE__, __LINE__, __FUNCTION__, fd);
 	if (fd == -1)return -3;
