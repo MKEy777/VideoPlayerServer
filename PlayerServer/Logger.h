@@ -145,7 +145,7 @@ public:
         std::map<int, CSocketBase*> mapClients; // 保存所有已连接的客户端（key 是 fd）
 
         // 主循环：线程有效 + epoll 正常 + server 存在
-        while (m_thread.isValid() && m_server) {
+        while (!m_thread.isValid() && m_server) {
 
             // 等待事件（timeout=1）
             ssize_t ret = m_epoll.WaitEvents(events, 1);
@@ -186,9 +186,10 @@ public:
 
                         int r = pClient->Recv(data);
 
-                        // === 调试打印 ===
+#ifdef _DEBUG
                         printf("[Debug] Recv fd=%d, ret=%d\n", (int)(*pClient), r);
-                        // ===============
+#endif // DEBUG
+                    
 
                         if (r <= 0) {
                             printf("[Debug] Client disconnected!\n");

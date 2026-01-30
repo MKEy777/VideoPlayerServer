@@ -262,15 +262,17 @@ public:
             int fd = accept(m_socket, param.addrun(), &len); // 接受连接
             if (fd == -1) return -3;
 
-            *pClient = new CLocalSocket(fd); // 用accept得到的fd构造
+            CLocalSocket* pNewClient = new CLocalSocket(fd);
+            *pClient = pNewClient;
             if (*pClient == NULL) return -4;
 
-            ret = (*pClient)->Init(param);   // 初始化客户端socket对象（复用Init逻辑）
+            ret = (*pClient)->Init(param);   // 初始化客户端socket对象
             if (ret != 0) {
                 delete (*pClient);
                 *pClient = NULL;
                 return -5;
             }
+            pNewClient->m_status = 2;
         }
         else { // 客户端：connect
             ret = connect(m_socket, m_param.addrun(), sizeof(sockaddr_un));
@@ -300,8 +302,6 @@ public:
 
     // >0 收到字节数；0 没有数据但无错；<0 错误/断开
     virtual int Recv(Buffer& data) {
-        printf("%s(%d):[%s] RECV\n",
-            __FILE__, __LINE__, __FUNCTION__);
         if (m_status < 2 || (m_socket == -1)) return -1; // 未连接/无效fd
 
         ssize_t len = read(m_socket, data, data.size()); // 读入预分配缓冲(data.size())
