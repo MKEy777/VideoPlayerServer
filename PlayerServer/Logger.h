@@ -182,7 +182,7 @@ public:
                         CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
 
                         Buffer data(1024 * 1024);
-                        data.resize(1024 * 1024); // 关键修复
+                        //data.resize(1024 * 1024); 
 
                         int r = pClient->Recv(data);
 
@@ -191,8 +191,8 @@ public:
 #endif // DEBUG
                         if (r <= 0) {
                             printf("[Debug] Client disconnected!\n");
-                            delete pClient;
                             mapClients[*pClient] = nullptr;
+                            delete pClient;
                         }
                         else {
                             printf("[Debug] Log received: %s\n", data.data()); // 打印收到的内容

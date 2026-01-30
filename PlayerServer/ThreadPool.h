@@ -100,6 +100,7 @@ public:
         if (base == nullptr) return -3;
 
         Buffer data(sizeof(base));
+        //data.resize(sizeof(base));
         memcpy(data, &base, sizeof(base));
 
         ret = client.Send(data);
@@ -144,6 +145,7 @@ private:
 
                             CFunctionBase* base = nullptr;
                             Buffer data(sizeof(base));
+                            //data.resize(sizeof(base));
 
                             int ret = pClient->Recv(data);
                             if (ret <= 0) {

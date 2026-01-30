@@ -17,7 +17,7 @@ public:
     // 预留容量 n（不是有效长度）
     explicit Buffer(size_t n) {
         reserve(n);
-        len_ = 0;
+        len_ = n;
         ensure_zterm();
     }
 
@@ -197,7 +197,9 @@ public:
     virtual int Close() {
         m_status = 3;
         if (m_socket != -1) {
-            unlink(m_param.ip.c_str());
+			if (m_param.attr & SOCK_ISSERVER) {
+                unlink(m_param.ip.c_str());
+			}               
             int fd = m_socket;
             m_socket = -1;
             close(fd);
