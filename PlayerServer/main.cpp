@@ -40,11 +40,11 @@ int CreateClientServer(CProcess* proc)
 
 int LogTest()
 {
-	char buffer[] = "hello edoyun! 冯老师";
+	char buffer[] = "LogTest";
 	usleep(1000 * 100);
-	TRACEI("here is log %d %c %f %g %s 哈哈 嘻嘻 易道云", 10, 'A', 1.0f, 2.0, buffer);
+	TRACEI("here is log %d %c %f %g %s 哈哈", 111111, 'A', 1.0f, 1.0, buffer);
 	DUMPD((void*)buffer, (size_t)sizeof(buffer));
-	LOGE << 100 << " " << 'S' << " " << 0.12345f << " " << 1.23456789 << " " << buffer << " 易道云编程";
+	LOGE << 333 << " " << 'S' << " " << 0.33333f << " " << 3.3333333 << " " << buffer << " 33编程";
 	return 0;
 }
 

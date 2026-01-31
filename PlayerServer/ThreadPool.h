@@ -32,6 +32,7 @@ public:
     CThreadPool& operator=(const CThreadPool&) = delete;
 
 public:
+    size_t Size() const{return m_threads.size();}
     int Start(unsigned count)
     {
         int ret = 0;
@@ -39,7 +40,7 @@ public:
         if (m_server != nullptr) return -1;   // 已初始化
         if (m_path.size() == 0) return -2;    // 构造失败
 
-        m_server = new CLocalSocket();
+        m_server = new CSocket();
         if (m_server == nullptr) return -3;
 
         ret = m_server->Init(CSockParam(m_path, SOCK_ISSERVER));
@@ -84,7 +85,7 @@ public:
     template<typename _FUNCTION_, typename... _ARGS_>
     int AddTask(_FUNCTION_ func, _ARGS_... args)
     {
-        static thread_local CLocalSocket client;
+        static thread_local CSocket client;
         int ret = 0;
 
         if (client == -1) {

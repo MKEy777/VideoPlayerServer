@@ -113,7 +113,7 @@ public:
         if (m_epoll.Create(1) != 0) return -3;
 
         // 创建本地 socket 服务端对象
-        m_server = new CLocalSocket();
+        m_server = new CSocket();
         if (!m_server) {
             Close();
             return -4;
@@ -228,7 +228,7 @@ public:
 public:
     // 供其他线程/进程调用：把 LogInfo 通过本地 socket 发给日志服务器
     static void Trace(const LogInfo& info) {
-        static thread_local CLocalSocket client; // 每线程一个连接，避免锁竞争
+        static thread_local CSocket client; // 每线程一个连接，避免锁竞争
         // 若当前线程还没连接 server.sock，则先 Init 连接
         if (client == -1) {
             if (client.Init(CSockParam("./log/server.sock", 0)) != 0) {

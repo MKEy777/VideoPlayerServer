@@ -123,6 +123,7 @@ enum SockAttr {
     SOCK_ISSERVER = 1, // 是否服务器：1=服务器，0=客户端
     SOCK_ISNONBLOCK = 2, // 是否非阻塞：1=非阻塞，0=阻塞
     SOCK_ISUDP = 4, // 是否 UDP：1=UDP，0=TCP
+	SOCK_ISIP = 8, // 是否网络套接字：1=IP，0=本地
 };
 
 //套接字参数封装类
@@ -197,7 +198,9 @@ public:
     virtual int Close() {
         m_status = 3;
         if (m_socket != -1) {
-			if (m_param.attr & SOCK_ISSERVER) {
+            if ((m_param.attr & SOCK_ISSERVER) &&//服务器
+				((m_param.attr & SOCK_ISIP) == 0)) //非网络套接字
+            {
                 unlink(m_param.ip.c_str());
 			}               
             int fd = m_socket;
@@ -213,11 +216,11 @@ protected:
     CSockParam m_param; // 初始化参数
 };
 
-class CLocalSocket : public CSocketBase {
+class CSocket : public CSocketBase {
 public:
-    CLocalSocket() : CSocketBase() {}
-    CLocalSocket(int sock) : CSocketBase() { m_socket = sock; }
-    virtual ~CLocalSocket() { Close(); } // 析构自动关闭
+    CSocket() : CSocketBase() {}
+    CSocket(int sock) : CSocketBase() { m_socket = sock; }
+    virtual ~CSocket() { Close(); } // 析构自动关闭
    
 public:
     virtual int Init(const CSockParam& param) {
@@ -226,14 +229,22 @@ public:
         m_param = param;
         int type = (m_param.attr & SOCK_ISUDP) ? SOCK_DGRAM : SOCK_STREAM; // DGRAM/STREAM
 
-        if (m_socket == -1)
-            m_socket = socket(PF_LOCAL, type, 0); // 创建Unix域socket
+        if (m_socket == -1) {
+			if (m_param.attr & SOCK_ISIP)
+                m_socket = socket(AF_INET, type, 0); // 网络套接字
+            else
+                m_socket = socket(AF_UNIX, type, 0); // 本地套接字
+        }
         else m_status = 2;
         if (m_socket == -1) return -2;
 
         int ret = 0;
         if (m_param.attr & SOCK_ISSERVER) { // 服务器：bind + listen
-            ret = bind(m_socket, m_param.addrun(), sizeof(sockaddr_un));
+            if (m_param.attr & SOCK_ISIP) {
+				ret = bind(m_socket, m_param.addrin(), sizeof(sockaddr_in));//网络套接字
+            } else {
+				ret = bind(m_socket, m_param.addrun(), sizeof(sockaddr_un));//本地套接字
+            }
             if (ret == -1) return -3;
             ret = listen(m_socket, 32); // 监听队列
             if (ret == -1) return -4;
@@ -260,13 +271,20 @@ public:
         if (m_param.attr & SOCK_ISSERVER) {
             if (pClient == NULL) return -2; // 需要返回新客户端对象
 
-            CSockParam param;               // 接收对端地址（Unix下通常没啥用）
-            socklen_t len = sizeof(sockaddr_un);
-
-            int fd = accept(m_socket, param.addrun(), &len); // 接受连接
+            CSockParam param;               // 接收对端地址
+			socklen_t len = 0;
+            int fd = -1;
+            if (m_param.attr & SOCK_ISIP) {
+				param.attr |= SOCK_ISIP;
+                len = sizeof(sockaddr_in);
+				fd = accept(m_socket, param.addrin(), &len); //网络套接字
+            } else {
+                len = sizeof(sockaddr_un);
+				fd = accept(m_socket, param.addrun(), &len); //本地套接字 
+            }
             if (fd == -1) return -3;
 
-            *pClient = new CLocalSocket(fd);
+            *pClient = new CSocket(fd);
             if (*pClient == NULL) return -4;
             ret = (*pClient)->Init(param);   // 初始化客户端socket对象
             if (ret != 0) {
@@ -276,7 +294,11 @@ public:
             }
         }
         else { // 客户端：connect
-            ret = connect(m_socket, m_param.addrun(), sizeof(sockaddr_un));
+            if (m_param.attr & SOCK_ISIP) {
+                ret = connect(m_socket, m_param.addrin(), sizeof(sockaddr_in));
+			}else {
+                ret = connect(m_socket, m_param.addrun(), sizeof(sockaddr_un));
+            }
             if (ret != 0) return -6;
         }
 

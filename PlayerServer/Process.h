@@ -22,7 +22,7 @@ public:
     }
 
     template <typename _FUNCTION_, typename... _ARGS_>
-    void SetEntryFunction(_FUNCTION_&& func, _ARGS_&&... args) {
+    int SetEntryFunction(_FUNCTION_&& func, _ARGS_&&... args) {
         // 如果多次调用 SetEntryFunction，先清理旧的
         if (m_func) {
             delete m_func;
@@ -37,6 +37,7 @@ public:
         m_func = new ConcreteFunction(
             std::forward<_FUNCTION_>(func),
             std::forward<_ARGS_>(args)...);
+        return 0;
     }
 
     int CreateSubProcess() {

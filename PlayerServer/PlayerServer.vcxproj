@@ -75,12 +75,14 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="CServer.cpp" />
     <ClCompile Include="Epoll.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CServer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Epoll.h" />
     <ClInclude Include="Function.h" />
