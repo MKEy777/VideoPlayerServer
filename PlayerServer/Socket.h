@@ -162,6 +162,13 @@ public:
         addr_un.sun_path[sizeof(addr_un.sun_path) - 1] = '\0';
     }
 
+    CSockParam(const sockaddr_in* addrin, int attr) {
+        this->ip = ip;
+        this->port = port;
+        this->attr = attr;
+        memcpy(&addr_in, addrin, sizeof(addr_in));
+    }
+
     sockaddr* addrin() { return reinterpret_cast<sockaddr*>(&addr_in); }
     sockaddr* addrun() { return reinterpret_cast<sockaddr*>(&addr_un); }
     const sockaddr* addrin() const { return reinterpret_cast<const sockaddr*>(&addr_in); }

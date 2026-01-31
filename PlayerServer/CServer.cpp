@@ -87,7 +87,6 @@ int CServer::ThreadFunc()
                 int ret = m_server->Link(&pClient);
                 if (ret != 0 || pClient == nullptr) continue;
 
-                // 注意：delete 之后不能再用 pClient / *pClient
                 int client_fd = (int)(*pClient);
 
                 ret = m_process.SendFD(*pClient);

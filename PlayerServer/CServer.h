@@ -32,8 +32,6 @@ public:
 
 protected:
     CBusiness() = default;
-
-private:
     CFunctionBase* m_connectedcallback = nullptr;
     CFunctionBase* m_recvcallback = nullptr;
 };
@@ -46,19 +44,16 @@ public:
 
     CServer(const CServer&) = delete;
     CServer& operator=(const CServer&) = delete;
-
 public:
     int Init(CBusiness* business, const Buffer& ip = "127.0.0.1", short port = 9999);
     int Run();
     int Close();
-
 private:
     int ThreadFunc();
-
 private:
     CThreadPool   m_pool;
-    CSocketBase* m_server = nullptr;
+    CSocketBase*  m_server = nullptr;
     CEpoll        m_epoll;
     CProcess      m_process;
-    CBusiness* m_business = nullptr; // 业务模块（外部传入，不在此处 delete）
+    CBusiness* m_business = nullptr; // 业务模块,手动 delete
 };

@@ -90,6 +90,7 @@
     <ClInclude Include="Socket.h" />
     <ClInclude Include="Thread.h" />
     <ClInclude Include="ThreadPool.h" />
+    <ClInclude Include="CPlayerServer.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
