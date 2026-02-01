@@ -254,6 +254,7 @@ public:
             if (m_param.attr & SOCK_ISIP) {
 				ret = bind(m_socket, m_param.addrin(), sizeof(sockaddr_in));//网络套接字
             } else {
+                unlink(m_param.addr_un.sun_path);
 				ret = bind(m_socket, m_param.addrun(), sizeof(sockaddr_un));//本地套接字
             }
             if (ret == -1) return -3;

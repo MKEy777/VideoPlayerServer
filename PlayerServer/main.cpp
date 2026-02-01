@@ -1,7 +1,4 @@
-﻿#include "Logger.h"
-#include "Process.h"
-#include "ThreadPool.h"
-#include "CPlayerServer.h"
+﻿#include "CPlayerServer.h"
 
 int CreateLogServer(CProcess* proc)
 {

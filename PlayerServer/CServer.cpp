@@ -89,7 +89,7 @@ int CServer::ThreadFunc()
 
                 int client_fd = (int)(*pClient);
 
-                ret = m_process.SendSocket(*pClient, *pClient));
+                ret = m_process.SendSocket(*pClient, *pClient);
                 delete pClient;
                 pClient = nullptr;
 

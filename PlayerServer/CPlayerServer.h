@@ -70,9 +70,11 @@ public:
 
 private:
     int Connected(CSocketBase* pClient) {
+        printf("Server Connected: %d\n", (int)(*pClient));
         return 0;
     }
     int Received(CSocketBase* pClient, const Buffer& data) {
+        printf("Server Recv: %s\n", (const char*)data);
         return 0;
     }
 
@@ -88,20 +90,32 @@ private:
 
             for (ssize_t i = 0; i < size; i++) {
                 if (events[i].events & EPOLLERR) {
-                    break;
+                    CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
+                    if (pClient) {
+                        m_epoll.Del(*pClient);
+                        delete pClient;
+                    }
+                    continue;
                 }
 
                 if (events[i].events & EPOLLIN) {
                     CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
                     if (!pClient) continue;
 
-                    Buffer data;
+                    Buffer data(4096);
                     ret = pClient->Recv(data);
-                    WARN_CONTINUE(ret);
-
-                    if (m_recvcallback) {
-                        (*m_recvcallback)(pClient, data);
+                    if (ret > 0) {
+                        if (m_recvcallback) {
+                            (*m_recvcallback)(pClient, data);
+                        }
+                        ret = 0;
                     }
+                    else if (ret < 0) {
+                        m_epoll.Del(*pClient);
+                        delete pClient;
+                    }
+
+                    WARN_CONTINUE(ret);
                 }
             }
         }
