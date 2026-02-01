@@ -19,6 +19,8 @@ public:
             delete m_func;
             m_func = nullptr;
         }
+        if (pipes[0] > 0) close(pipes[0]);
+        if (pipes[1] > 0) close(pipes[1]);
     }
 
     template <typename _FUNCTION_, typename... _ARGS_>

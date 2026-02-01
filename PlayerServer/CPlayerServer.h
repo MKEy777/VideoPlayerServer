@@ -56,14 +56,25 @@ public:
             ret = proc->RecvSocket(sock, &addrin);
             if (ret < 0 || (sock == 0))break;
             CSocketBase* pClient = new CSocket(sock);
-            if (pClient == NULL)continue;
+            if (pClient == NULL) {
+                close(sock);
+                continue;
+            }
             ret = pClient->Init(CSockParam(&addrin, SOCK_ISIP));
-            WARN_CONTINUE(ret);
+            if (ret != 0) {
+                TRACEW("Init failed ret=%d...", ret);
+                delete pClient; 
+                continue;
+            }
             ret = m_epoll.Add(sock, EpollData((void*)pClient));
             if (m_connectedcallback) {
                 (*m_connectedcallback)(pClient);
             }
-            WARN_CONTINUE(ret);
+            if (ret != 0) {
+                TRACEW("Epoll Add failed ret=%d...", ret);
+                delete pClient; 
+                continue;
+            }
         }
         return 0;
     }
@@ -90,9 +101,9 @@ private:
 
             for (ssize_t i = 0; i < size; i++) {
                 CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
-                //printf("Event Triggered! ptr=%p events=%d\n", pClient, events[i].events);
+                printf("Event Triggered! ptr=%p events=%d\n", pClient, events[i].events);
                 if (events[i].events & EPOLLERR) {
-                    //printf("!! EPOLLERR detected on %p. Closing.\n", pClient);
+                    printf("!! EPOLLERR detected on %p. Closing.\n", pClient);
                     if (pClient) {
                         m_epoll.Del(*pClient);
                         delete pClient;
@@ -105,21 +116,21 @@ private:
 
                     Buffer data(4096);
                     ret = pClient->Recv(data);
-                    //printf("Recv result: ret=%d errno=%d\n", ret, errno);
+                    printf("Recv result: ret=%d errno=%d\n", ret, errno);
                     if (ret > 0) {
-                        //printf(">> Server Recv Success: %d bytes. Data: [%s]\n", ret, (char*)data);
+                        printf(">> Server Recv Success: %d bytes. Data: [%s]\n", ret, (char*)data);
                         if (m_recvcallback) {
                             (*m_recvcallback)(pClient, data);
                         }
                         ret = 0;
                     }
                     else if (ret < 0) {
-                        //printf("!! Recv Failed. ret=%d errno=%d msg=%s\n", ret, errno, strerror(errno));
+                        printf("!! Recv Failed. ret=%d errno=%d msg=%s\n", ret, errno, strerror(errno));
                         m_epoll.Del(*pClient);
                         delete pClient;
                     }
                     else {
-                        //printf("Recv EAGAIN (No data yet).\n");
+                        printf("Recv EAGAIN (No data yet).\n");
                     }
 
                     WARN_CONTINUE(ret);
