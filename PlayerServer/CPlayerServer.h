@@ -89,8 +89,10 @@ private:
             if (size < 0) break;
 
             for (ssize_t i = 0; i < size; i++) {
+                CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
+                //printf("Event Triggered! ptr=%p events=%d\n", pClient, events[i].events);
                 if (events[i].events & EPOLLERR) {
-                    CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
+                    //printf("!! EPOLLERR detected on %p. Closing.\n", pClient);
                     if (pClient) {
                         m_epoll.Del(*pClient);
                         delete pClient;
@@ -99,20 +101,25 @@ private:
                 }
 
                 if (events[i].events & EPOLLIN) {
-                    CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
                     if (!pClient) continue;
 
                     Buffer data(4096);
                     ret = pClient->Recv(data);
+                    //printf("Recv result: ret=%d errno=%d\n", ret, errno);
                     if (ret > 0) {
+                        //printf(">> Server Recv Success: %d bytes. Data: [%s]\n", ret, (char*)data);
                         if (m_recvcallback) {
                             (*m_recvcallback)(pClient, data);
                         }
                         ret = 0;
                     }
                     else if (ret < 0) {
+                        //printf("!! Recv Failed. ret=%d errno=%d msg=%s\n", ret, errno, strerror(errno));
                         m_epoll.Del(*pClient);
                         delete pClient;
+                    }
+                    else {
+                        //printf("Recv EAGAIN (No data yet).\n");
                     }
 
                     WARN_CONTINUE(ret);
