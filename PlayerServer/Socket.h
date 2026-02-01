@@ -175,8 +175,8 @@ public:
     const sockaddr* addrun() const { return reinterpret_cast<const sockaddr*>(&addr_un); }
 
 public:
-    sockaddr_in addr_in{};
-    sockaddr_un addr_un{};
+    sockaddr_in addr_in;
+    sockaddr_un addr_un;
 
     Buffer ip;   // ip 或 unix path（内部保证 '\0'）
     short  port;
@@ -191,7 +191,11 @@ public:
     }
 
     virtual ~CSocketBase() { Close(); }
-    operator int() const noexcept { return m_socket; }
+    virtual operator int() { return m_socket; }
+    virtual operator int()const { return m_socket; }
+    virtual operator const sockaddr_in* ()const { return &m_param.addr_in; }
+    virtual operator sockaddr_in* () { return &m_param.addr_in; }
+
 public:
     // 初始化：服务器创建/bind/listen；客户端创建
     virtual int Init(const CSockParam& param) = 0;

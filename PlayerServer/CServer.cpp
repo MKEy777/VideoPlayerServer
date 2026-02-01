@@ -14,7 +14,7 @@ int CServer::Init(CBusiness* business, const Buffer& ip, short port)
 
     int ret = 0;
 
-    ret = m_process.SetEntryFunction(&CBusiness::BusinessProcess, m_business);
+    ret = m_process.SetEntryFunction(&CBusiness::BusinessProcess, m_business,&m_process);
     if (ret != 0) return -2;
 
     ret = m_process.CreateSubProcess();
@@ -89,7 +89,7 @@ int CServer::ThreadFunc()
 
                 int client_fd = (int)(*pClient);
 
-                ret = m_process.SendFD(*pClient);
+                ret = m_process.SendSocket(*pClient, *pClient));
                 delete pClient;
                 pClient = nullptr;
 

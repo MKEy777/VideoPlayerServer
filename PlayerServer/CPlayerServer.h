@@ -37,7 +37,7 @@ public:
 
     virtual int BusinessProcess(CProcess* proc) {
         using namespace std::placeholders;
-        int ret = 0;
+        int ret = 0; 
         ret = setConnectedCallback(&CPlayerServer::Connected, this, _1);
         ERR_RETURN(ret, -1);
         ret = setRecvCallback(&CPlayerServer::Received, this, _1, _2);
