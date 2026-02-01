@@ -134,6 +134,7 @@ public:
 
     int SendSocket(int fd, const sockaddr_in* addrin) {//主进程完成
         struct msghdr msg;
+        memset(&msg, 0, sizeof(msg));
         iovec iov[2];
         char buf[2][10] = { "edoyun","jueding" };
         iov[0].iov_base = (void*)addrin;
@@ -163,7 +164,8 @@ public:
 
     int RecvSocket(int& fd, sockaddr_in* addrin)
     {
-        msghdr msg;
+        struct msghdr msg;
+        memset(&msg, 0, sizeof(msg));
         iovec iov[2];
         char buf[][10] = { "","" };
         iov[0].iov_base = addrin;

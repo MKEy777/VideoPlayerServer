@@ -29,7 +29,7 @@ int CServer::Init(CBusiness* business, const Buffer& ip, short port)
     m_server = new CSocket();
     if (m_server == nullptr) return -6;
 
-    ret = m_server->Init(CSockParam(ip, port, SOCK_ISSERVER | SOCK_ISIP));
+    ret = m_server->Init(CSockParam(ip, port, SOCK_ISSERVER | SOCK_ISIP | SOCK_ISNONBLOCK));
     if (ret != 0) return -7;
 
     ret = m_epoll.Add(*m_server, EpollData((void*)m_server));

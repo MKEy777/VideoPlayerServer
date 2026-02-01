@@ -66,15 +66,17 @@ public:
                 delete pClient; 
                 continue;
             }
-            ret = m_epoll.Add(sock, EpollData((void*)pClient));
+            m_mapClients[sock] = pClient;
+            ret = m_epoll.Add(sock, EpollData((void*)pClient), EPOLLIN | EPOLLONESHOT);
+            if (ret != 0) {
+                TRACEW("Epoll Add failed ret=%d...", ret);
+                CloseClient(pClient);
+                continue;
+            }
             if (m_connectedcallback) {
                 (*m_connectedcallback)(pClient);
             }
-            if (ret != 0) {
-                TRACEW("Epoll Add failed ret=%d...", ret);
-                delete pClient; 
-                continue;
-            }
+            
         }
         return 0;
     }
@@ -88,7 +90,20 @@ private:
         printf("Server Recv: %s\n", (const char*)data);
         return 0;
     }
+    void CloseClient(CSocketBase* pClient) {
 
+        if (!pClient) return;
+        int fd = (int)(*pClient);
+        m_epoll.Del(*pClient); // 先从 epoll 移除
+        auto it = m_mapClients.find(fd);
+
+        if (it != m_mapClients.end()) {
+
+            m_mapClients.erase(it);
+
+        }
+        delete pClient; // 最后释放内存
+    }
 private:
     int ThreadFunc()
     {
@@ -118,10 +133,11 @@ private:
                     ret = pClient->Recv(data);
                     printf("Recv result: ret=%d errno=%d\n", ret, errno);
                     if (ret > 0) {
-                        printf(">> Server Recv Success: %d bytes. Data: [%s]\n", ret, (char*)data);
+                        printf(">> Server Recv Success: %d bytes. Data: [%s] \n", ret, (char*)data);
                         if (m_recvcallback) {
                             (*m_recvcallback)(pClient, data);
                         }
+                        m_epoll.Modify((int)(*pClient), EPOLLIN | EPOLLONESHOT, EpollData((void*)pClient));
                         ret = 0;
                     }
                     else if (ret < 0) {
@@ -130,7 +146,7 @@ private:
                         delete pClient;
                     }
                     else {
-                        printf("Recv EAGAIN (No data yet).\n");
+                        m_epoll.Modify((int)(*pClient), EPOLLIN | EPOLLONESHOT, EpollData((void*)pClient));
                     }
 
                     WARN_CONTINUE(ret);
