@@ -26,9 +26,7 @@ public:
     template <typename _FUNCTION_, typename... _ARGS_>
     int SetEntryFunction(_FUNCTION_&& func, _ARGS_&&... args) {
         // 如果多次调用 SetEntryFunction，先清理旧的
-        if (m_func) {
-            delete m_func;
-        }
+        if (m_func) {delete m_func;}
 
         // 1. 使用 std::decay 处理类型，防止引用退化导致的悬空指针
         // 2. 使用原始指针 new 分配对象

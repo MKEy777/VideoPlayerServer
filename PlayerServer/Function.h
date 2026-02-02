@@ -25,8 +25,7 @@ public:
     // 构造函数：使用 std::bind 绑定函数和参数
     CFunction(_FUNCTION_ func, _ARGS_... args)
         : m_binder(std::bind(std::move(func), std::move(args)...))
-    {
-    }
+    {}
 
     int operator()() override
     {

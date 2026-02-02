@@ -101,7 +101,6 @@ public:
         if (base == nullptr) return -3;
 
         Buffer data(sizeof(base));
-        //data.resize(sizeof(base));
         memcpy(data, &base, sizeof(base));
 
         ret = client.Send(data);

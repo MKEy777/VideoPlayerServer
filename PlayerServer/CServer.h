@@ -56,5 +56,5 @@ private:
     CSocketBase*  m_server = nullptr;
     CEpoll        m_epoll;
     CProcess      m_process;
-    CBusiness* m_business = nullptr; // 业务模块,手动 delete
+    CBusiness*    m_business = nullptr; // 业务模块,手动 delete
 };

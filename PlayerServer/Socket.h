@@ -8,37 +8,56 @@
 #include <fcntl.h>
 #include <vector>
 #include <cstring>
-//#include <algorithm>
+#include <algorithm>
 
 class Buffer {
 public:
     Buffer() { ensure_zterm(); }
 
-    // 预留容量 n（不是有效长度）
-    explicit Buffer(size_t n) {
-        reserve(n);
-        len_ = n;
+    explicit Buffer(size_t capacity) {
+        reserve(capacity);
+        len_ = capacity;      
         ensure_zterm();
     }
 
-    Buffer(const char* s) { assign_cstr(s); }
+    Buffer(const char* cstr) { assign_cstr(cstr); }
     Buffer(const std::string& s) { assign_cstr(s.c_str()); }
 
-    size_t size() const noexcept { return len_; }          // 有效字节数
-    bool empty() const noexcept { return len_ == 0; }
-
-    size_t capacity() const noexcept {
-        return buf_.empty() ? 0 : (buf_.size() - 1);       // 可用容量（不含 '\0'）
+    // 从 data + length 构造
+    Buffer(const char* data, size_t length) {
+        if (!data || length == 0) { clear(); return; }
+        buf_.assign(data, data + length);
+        len_ = length;
+        ensure_zterm();
     }
 
-    void reserve(size_t n) {
-        if (buf_.size() < n + 1) buf_.resize(n + 1);
+    // 从 [begin, end) 构造
+    Buffer(const char* begin, const char* end) {
+        if (!begin || !end || end <= begin) { clear(); return; }
+        size_t length = static_cast<size_t>(end - begin);
+        buf_.assign(begin, end);
+        len_ = length;
+        ensure_zterm();
+    }
+
+    // ===== 基本属性 =====
+    size_t size() const noexcept { return len_; }   // 有效字节数
+    bool empty() const noexcept { return len_ == 0; }
+
+    // 可用容量（不含末尾 '\0'）
+    size_t capacity() const noexcept {
+        return buf_.empty() ? 0 : (buf_.size() - 1);
+    }
+
+    // ===== 内存管理 =====
+    void reserve(size_t new_capacity) {
+        if (buf_.size() < new_capacity + 1) buf_.resize(new_capacity + 1);
         ensure_zterm();
     }
 
     // 设定有效长度（常用于 Recv 后：resize(r)）
-    void resize(size_t n) {
-        len_ = n;
+    void resize(size_t new_size) {
+        len_ = new_size;
         if (buf_.size() < len_ + 1) buf_.resize(len_ + 1);
         buf_[len_] = '\0';
     }
@@ -49,11 +68,11 @@ public:
         buf_[0] = '\0';
     }
 
-    // 用于“写入”的指针（Socket Recv 典型会用这个）
+    // ===== 数据访问 =====
     char* data() noexcept { return buf_.data(); }
     const char* data() const noexcept { return buf_.data(); }
 
-    // 额外提供：从 len_ 后开始写
+    // 为追加写入预留空间，并返回可写指针（从当前 len_ 起）
     char* writable_tail(size_t need) {
         reserve(len_ + need);
         return buf_.data() + len_;
@@ -67,45 +86,55 @@ public:
         return buf_.data();
     }
 
-    void assign_cstr(const char* s) {
-        if (!s) { clear(); return; }
-        size_t n = std::strlen(s);
-        buf_.assign(s, s + n);
-        len_ = n;
-        ensure_zterm();
-    }
-
     std::string to_string() const {
         return std::string(data(), data() + len_);
     }
 
-    // ====== 追加 / 拼接（适配 LogInfo）======
-    void append(const char* s, size_t n) {
-        if (!s || n == 0) return;
-        reserve(len_ + n);
-        std::memcpy(buf_.data() + len_, s, n);
-        len_ += n;
+    // ===== 赋值 =====
+    void assign_cstr(const char* cstr) {
+        if (!cstr) { clear(); return; }
+        size_t length = std::strlen(cstr);
+        buf_.assign(cstr, cstr + length);
+        len_ = length;
         ensure_zterm();
     }
-    void append(char c) {
-        reserve(len_ + 1);
-        buf_[len_] = c;
-        len_++;
-        buf_[len_] = '\0';
+
+    // ===== 追加 / 拼接 =====
+    void append(const char* data, size_t length) {
+        if (!data || length == 0) return;
+        reserve(len_ + length);
+        std::memcpy(buf_.data() + len_, data, length);
+        len_ += length;
+        ensure_zterm();
     }
 
-    void append(const char* s) {
-        if (!s) return;
-        append(s, std::strlen(s));
+    void append(const char* cstr) {
+        if (!cstr) return;
+        append(cstr, std::strlen(cstr));
     }
 
     void append(const std::string& s) {
         append(s.data(), s.size());
     }
 
-    Buffer& operator+=(const char* s) { append(s); return *this; }
+    void append(char c) {
+        reserve(len_ + 1);
+        buf_[len_] = c;
+        ++len_;
+        buf_[len_] = '\0';
+    }
+
+    Buffer& operator+=(const char* cstr) { append(cstr); return *this; }
     Buffer& operator+=(const std::string& s) { append(s); return *this; }
-    Buffer& operator+=(char c) {append(c);return *this;}
+    Buffer& operator+=(char c) { append(c); return *this; }
+
+    // ===== 用作 map key 的字典序比较 =====
+    bool operator<(const Buffer& rhs) const {
+        const size_t n = std::min(len_, rhs.len_);
+        int c = std::memcmp(data(), rhs.data(), n);
+        if (c != 0) return c < 0;
+        return len_ < rhs.len_;
+    }
 
 private:
     void ensure_zterm() {
@@ -116,8 +145,9 @@ private:
 
 private:
     std::vector<char> buf_;
-    size_t len_{ 0 }; // 逻辑长度（有效字节数）
+    size_t len_{ 0 }; 
 };
+
 
 enum SockAttr {
     SOCK_ISSERVER = 1, // 是否服务器：1=服务器，0=客户端
@@ -323,7 +353,7 @@ public:
         if (m_status < 2 || (m_socket == -1)) return -1; // 未连接/无效fd
 
         ssize_t index = 0;
-        while (index < (ssize_t)data.size()) { // 循环发送直到发完
+        while (index < data.size()) { // 循环发送直到发完
             ssize_t len = write(m_socket, (const char*)data + index, data.size() - index);
             if (len == 0) return -2; // 一般不会出现：写0字节
             if (len < 0) {           // 错误处理
