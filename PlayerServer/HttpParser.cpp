@@ -21,10 +21,6 @@ CHttpParser::CHttpParser()
     m_settings.on_message_complete = &CHttpParser::OnMessageComplete;
 }
 
-CHttpParser::~CHttpParser()
-{
-}
-
 CHttpParser::CHttpParser(const CHttpParser& http)
 {
     memcpy(&m_parser, &http.m_parser, sizeof(m_parser));
