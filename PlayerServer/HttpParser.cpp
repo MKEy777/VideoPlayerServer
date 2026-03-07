@@ -220,7 +220,7 @@ int UrlParser::Parser()
         const char* eq = strchr(kv, '=');
         if (!eq) return -3;
 
-        m_values[Buffer(kv, eq)] = Buffer(eq + 1, kv + kv.size());
+        m_values[Buffer(kv, eq)] = Buffer(eq + 1, kv.end());
         if (!next) break;
         pos = next + 1;
     }

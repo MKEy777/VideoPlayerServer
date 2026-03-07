@@ -5,11 +5,11 @@
 #include <memory>
 #include <vector>
 
-class _Table_;
-using PTable = std::shared_ptr<_Table_>;
+class _Table_;//表的基类
+using PTable = std::shared_ptr<_Table_>;//表的智能指针
 
-using KeyValue = std::map<Buffer, Buffer>;
-using Result = std::list<PTable>;
+using KeyValue = std::map<Buffer, Buffer>;//连接参数的键值对
+using Result = std::list<PTable>;//查询结果的列表
 
 class CDatabaseClient
 {
@@ -39,11 +39,10 @@ public:
 };
 
 //表和列的基类的实现
-class _Field_;
-using PField = std::shared_ptr<_Field_>;
-using FieldArray = std::vector<PField>;
-using FieldMap = std::map<Buffer, PField>;
-
+class _Field_;//列的基类
+using PField = std::shared_ptr<_Field_>;//列的智能指针
+using FieldArray = std::vector<PField>;//列的数组
+using FieldMap = std::map<Buffer, PField>;//列的映射表
 
 class _Table_ {
 public:
@@ -131,13 +130,12 @@ public:
 	//列的全名
 	virtual operator const Buffer() const = 0;
 public:
-	Buffer Name;
-	Buffer Type;
-	Buffer Size;
-	unsigned Attr;
-	Buffer Default;
-	Buffer Check;
+	Buffer Name;//列名
+	Buffer Type;//列类型
+	Buffer Size;//列大小
+	unsigned Attr;//列属性
+	Buffer Default;//默认值
+	Buffer Check;//检查条件
 public:
-	//操作条件
-	unsigned Condition;
+	unsigned Condition;//操作条件
 };

@@ -7,11 +7,12 @@
     <ClCompile Include="http_parser.c" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MysqlClient.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="sqlite3\sqlite3.c">
       <Filter>sqlite3</Filter>
     </ClCompile>
+    <ClCompile Include="Sqlite3Client.cpp" />
+    <ClCompile Include="DatabaseHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CServer.h" />
@@ -21,7 +22,6 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Epoll.h" />
     <ClInclude Include="Function.h" />
-    <ClInclude Include="MysqlClient.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Socket.h" />
@@ -34,10 +34,15 @@
     <ClInclude Include="sqlite3\sqlite3ext.h">
       <Filter>sqlite3</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Sqlite3Client.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sqlite3">
       <UniqueIdentifier>{5bc793fe-235c-4fce-b945-fcbd6ac899e6}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PlayerServer.rc" />
   </ItemGroup>
 </Project>
