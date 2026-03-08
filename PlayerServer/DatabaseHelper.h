@@ -73,30 +73,33 @@ public:
 	FieldMap Fields;//列的定义映射表
 };
 
+//操作类型
 enum {
 	SQL_INSERT = 1,//插入的列
 	SQL_MODIFY = 2,//修改的列
 	SQL_CONDITION = 4//查询条件列
 };
 
+//列属性
 enum {
 	NOT_NULL = 1,
 	DEFAULT = 2,
 	UNIQUE = 4,
 	PRIMARY_KEY = 8,
 	CHECK = 16,
-	AUTOINCREMENT = 32
+	AUTOINCREMENT = 32 //自增列
 };
 
+//列类型
 using SqlType = enum {
 	TYPE_NULL = 0,
 	TYPE_BOOL = 1,
 	TYPE_INT = 2,
 	TYPE_DATETIME = 4,
-	TYPE_REAL = 8,
+	TYPE_REAL = 8,//浮点数
 	TYPE_VARCHAR = 16,
 	TYPE_TEXT = 32,
-	TYPE_BLOB = 64
+	TYPE_BLOB = 64//二进制数据
 };
 
 class _Field_

@@ -35,19 +35,20 @@ public:
 	//是否连接 true表示连接中 false表示未连接
 	virtual bool IsConnected();
 private:
-	static int ExecCallback(void* arg, int count, char** names, char** values);
-	int ExecCallback(Result& result, const _Table_& table, int count, char** names, char** values);
+	//sqlite3_exec 的回调函数
+	static int ExecCallback(void* arg, int count, char** values, char** names);
+	
+	int ExecCallback(Result& result, const _Table_& table, int count, char** values, char** names);
 private:
-	sqlite3_stmt* m_stmt;
-	sqlite3* m_db;
+	sqlite3_stmt* m_stmt;//预编译 SQL 语句
+	sqlite3* m_db;//数据库连接对象
 private:
+	//回调参数封装类
 	class ExecParam {
 	public:
 		ExecParam(CSqlite3Client* obj, Result& result, const _Table_& table)
-			:obj(obj), result(result), table(table)
-		{
-		}
-		CSqlite3Client* obj;
+			:obj(obj), result(result), table(table){}
+		CSqlite3Client* obj;//当前数据库对象
 		Result& result;
 		const _Table_& table;
 	};
@@ -110,13 +111,13 @@ private:
 		double Double;
 		Buffer* String;
 	}Value;
-	int nType;
+	int nType;//列的类型
 };
 
 #define DECLARE_TABLE_CLASS(name, base) class name:public base { \
 public: \
 virtual PTable Copy() const {return PTable(new name(*this));} \
-name():base(){Name=#name;
+name():base(){Name=#name;//宏字符串化
 
 #define DECLARE_FIELD(ntype,name,attr,type,size,default_,check) \
 {PField field(new _sqlite3_field_(ntype, #name, attr, type, size, default_, check));FieldDefine.push_back(field);Fields[#name] = field; }

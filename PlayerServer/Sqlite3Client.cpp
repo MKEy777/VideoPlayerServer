@@ -34,7 +34,7 @@ int CSqlite3Client::Exec(const Buffer& sql, Result& result, const _Table_& table
 	printf("sql={%s}\n", (char*)sql);
 	ExecParam param(this, result, table);
 	int ret = sqlite3_exec(m_db, sql,
-		&CSqlite3Client::ExecCallback, (void*)&param, &errmsg);
+		&CSqlite3Client::ExecCallback, (void*)&param ,&errmsg );
 	if (ret != SQLITE_OK) {
 		printf("sql={%s}\n", sql);
 		printf("Exec failed:%d [%s]\n", ret, errmsg);
@@ -101,10 +101,14 @@ bool CSqlite3Client::IsConnected()
 int CSqlite3Client::ExecCallback(void* arg, int count, char** values, char** names)
 {
 	ExecParam* param = (ExecParam*)arg;
-	return param->obj->ExecCallback(param->result, param->table, count, names, values);
+	return param->obj->ExecCallback(param->result, param->table, count, values, names);
 }
-
-int CSqlite3Client::ExecCallback(Result& result, const _Table_& table, int count, char** names, char** values)
+/* result：最终查询结果链表
+   table ：表结构模板
+   count ：列数
+   names ：列名数组
+   values：列值数组 */
+int CSqlite3Client::ExecCallback(Result& result, const _Table_& table, int count, char** values, char** names)
 {
 	PTable pTable = table.Copy();
 	if (pTable == nullptr) {
@@ -138,9 +142,7 @@ _sqlite3_table_::_sqlite3_table_(const _sqlite3_table_& table)
 	}
 }
 
-_sqlite3_table_::~_sqlite3_table_()
-{
-}
+_sqlite3_table_::~_sqlite3_table_(){}
 
 Buffer _sqlite3_table_::Create()
 {	//CREATE TABLE IF NOT EXISTS 表全名 (列定义,……);
