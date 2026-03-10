@@ -82,6 +82,8 @@ public:
     char* data() noexcept { return buf_.data(); }
     const char* data() const noexcept { return buf_.data(); }
     operator char* () const noexcept { return const_cast<char*>(buf_.data()); }
+    operator unsigned char* () noexcept { return reinterpret_cast<unsigned char*>(buf_.data());}
+    operator const unsigned char* () const noexcept { return reinterpret_cast<const unsigned char*>(buf_.data());}
 
     // 获取当前有效数据末尾的可写指针（用于 Recv 等直接写入场景）
     char* writable_tail(size_t need) {
@@ -134,6 +136,7 @@ public:
 
     Buffer& operator=(const char* cstr) { assign_cstr(cstr); return *this; }
     Buffer& operator=(const std::string& s) { assign_cstr(s.c_str()); return *this; }
+
 
     // ===== 运算符重载：拼接操作（消除隐式转换导致的二义性） =====
 

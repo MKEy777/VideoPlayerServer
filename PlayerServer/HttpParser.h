@@ -82,6 +82,7 @@ public:
 
     // 重新设置 URL，并清空上次解析结果
     void SetUrl(const Buffer& url);
+    const Buffer Uri()const { return m_uri; }
 
 private:
     Buffer m_url;                         // 原始 URL

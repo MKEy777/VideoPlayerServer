@@ -6,7 +6,8 @@
 #include <cerrno>
 #include <cstring>
 #include <functional>
-
+#include "jsoncpp/json.h"
+#include "HttpParser.h"
 /*
 * 1. 客户端的地址问题
 * 2. 连接回调的参数问题
@@ -83,12 +84,117 @@ public:
 
 private:
     int Connected(CSocketBase* pClient) {
-        printf("Server Connected: %d\n", (int)(*pClient));
+        //TODO:客户端连接处理 简单打印一下客户端信息
+        sockaddr_in* paddr = *pClient;
+        TRACEI("client connected addr %s port:%d", inet_ntoa(paddr->sin_addr), paddr->sin_port);
         return 0;
     }
     int Received(CSocketBase* pClient, const Buffer& data) {
-        printf("Server Recv: %s\n", (const char*)data);
+        TRACEI("接收到数据！");
+        //TODO:主要业务，在此处理
+        //HTTP 解析
+        int ret = 0;
+        Buffer response = "";
+        ret = HttpParser(data);
+        TRACEI("HttpParser ret=%d", ret);
+        //验证结果的反馈
+        if (ret != 0) {//验证失败
+            TRACEE("http parser failed!%d", ret);
+        }
+        response = MakeResponse(ret);
+        ret = pClient->Send(response);
+        if (ret != 0) {
+            TRACEE("http response failed!%d [%s]", ret, (char*)response);
+        }
+        else {
+            TRACEI("http response success!%d", ret);
+        }
         return 0;
+    }
+    int HttpParser(const Buffer& data) {
+        CHttpParser parser;
+        size_t size = parser.Parser(data);
+        if (size == 0 || (parser.Errno() != 0)) {
+            TRACEE("size %llu errno:%u", size, parser.Errno());
+            return -1;
+        }
+        if (parser.Method() == HTTP_GET) {
+            //get 处理
+            UrlParser url("https://192.168.1.100" + parser.Url());
+            int ret = url.Parser();
+            if (ret != 0) {
+                TRACEE("ret = %d url[%s]", ret, "https://192.168.1.100" + parser.Url());
+                return -2;
+            }
+            Buffer uri = url.Uri();
+            TRACEI("**** uri = %s", (char*)uri);
+            if (uri == "login") {
+                //处理登录
+                Buffer time = url["time"];
+                Buffer salt = url["salt"];
+                Buffer user = url["user"];
+                Buffer sign = url["sign"];
+                TRACEI("time %s salt %s user %s sign %s", (char*)time, (char*)salt, (char*)user, (char*)sign);
+                //数据库的查询
+                edoyunLogin_user_mysql dbuser;
+                Result result;
+                Buffer sql = dbuser.Query("user_name=\"" + user + "\"");
+                ret = m_db->Exec(sql, result, dbuser);
+                if (ret != 0) {
+                    TRACEE("sql=%s ret=%d", (char*)sql, ret);
+                    return -3;
+                }
+                if (result.size() == 0) {
+                    TRACEE("no result sql=%s ret=%d", (char*)sql, ret);
+                    return -4;
+                }
+                if (result.size() != 1) {
+                    TRACEE("more than one sql=%s ret=%d", (char*)sql, ret);
+                    return -5;
+                }
+                auto user1 = result.front();
+                Buffer pwd = *user1->Fields["user_password"]->Value.String;
+                TRACEI("password = %s", (char*)pwd);
+                //登录请求的验证
+                const char* MD5_KEY = "*&^%$#@b.v+h-b*g/h@n!h#n$d^ssx,.kl<kl";
+                Buffer md5str = time + MD5_KEY + pwd + salt;
+                Buffer md5 = Crypto::MD5(md5str);
+                TRACEI("md5 = %s", (char*)md5);
+                if (md5 == sign) {
+                    return 0;
+                }
+                return -6;
+            }
+        }
+        else if (parser.Method() == HTTP_POST) {
+            //post 处理
+        }
+        return -7;
+    }
+    Buffer MakeResponse(int ret) {
+        Json::Value root;
+        root["status"] = ret;
+        if (ret != 0) {
+            root["message"] = "登录失败，可能是用户名或者密码错误！";
+        }
+        else {
+            root["message"] = "success";
+        }
+        Buffer json = root.toStyledString();
+        Buffer result = "HTTP/1.1 200 OK\r\n";
+        time_t t;
+        time(&t);
+        tm* ptm = localtime(&t);
+        char temp[64] = "";
+        strftime(temp, sizeof(temp), "%a, %d %b %G %T GMT\r\n", ptm);
+        Buffer Date = Buffer("Date: ") + temp;
+        Buffer Server = "Server: Edoyun/1.0\r\nContent-Type: text/html; charset=utf-8\r\nX-Frame-Options: DENY\r\n";
+        snprintf(temp, sizeof(temp), "%d", json.size());
+        Buffer Length = Buffer("Content-Length: ") + temp + "\r\n";
+        Buffer Stub = "X-Content-Type-Options: nosniff\r\nReferrer-Policy: same-origin\r\n\r\n";
+        result += Date + Server + Length + Stub + json;
+        TRACEI("response: %s", (char*)result);
+        return result;
     }
     void CloseClient(CSocketBase* pClient) {
 
@@ -162,4 +268,5 @@ private:
     std::map<int, CSocketBase*> m_mapClients;
     CThreadPool m_pool;
     unsigned m_count = 0;
+    CDatabaseClient* m_db;
 };
