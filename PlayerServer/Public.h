@@ -137,8 +137,25 @@ public:
     Buffer& operator=(const char* cstr) { assign_cstr(cstr); return *this; }
     Buffer& operator=(const std::string& s) { assign_cstr(s.c_str()); return *this; }
 
+    bool operator==(const char* cstr) const {
+        if (cstr == nullptr) return empty();
+        // 长度不等直接返回 false，提高效率
+        size_t cstr_len = std::strlen(cstr);
+        if (len_ != cstr_len) return false;
+        return std::memcmp(data(), cstr, len_) == 0;
+    }
 
-    // ===== 运算符重载：拼接操作（消除隐式转换导致的二义性） =====
+    bool operator!=(const char* cstr) const {
+        return !(*this == cstr);
+    }
+
+    bool operator==(const std::string& s) const {return (len_ == s.size()) && (std::memcmp(data(), s.data(), len_) == 0);}
+    bool operator!=(const std::string& s) const { return !(*this == s); }
+
+    bool operator==(const Buffer& rhs) const { return (len_ == rhs.len_) && (std::memcmp(data(), rhs.data(), len_) == 0);}
+    bool operator!=(const Buffer& rhs) const { return !(*this == rhs); }
+
+    // ===== 运算符重载：拼接操作 =====
 
     // Buffer + Buffer
     Buffer operator+(const Buffer& rhs) const {
