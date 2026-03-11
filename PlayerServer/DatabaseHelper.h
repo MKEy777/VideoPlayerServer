@@ -58,7 +58,7 @@ public:
 	virtual Buffer Delete(const _Table_& values) = 0;
 	//TODO:参数进行优化
 	virtual Buffer Modify(const _Table_& values) = 0;
-	virtual Buffer Query() = 0;
+	virtual Buffer Query(const Buffer& condition = "") = 0;
 	//创建一个基于表的对象
 	virtual PTable Copy()const = 0;
 	virtual void ClearFieldUsed() = 0;
@@ -82,6 +82,7 @@ enum {
 
 //列属性
 enum {
+	NONE = 0,
 	NOT_NULL = 1,
 	DEFAULT = 2,
 	UNIQUE = 4,
@@ -141,4 +142,11 @@ public:
 	Buffer Check;//检查条件
 public:
 	unsigned Condition;//操作条件
+	union {
+		bool Bool;
+		int Integer;
+		double Double;
+		Buffer* String;
+	}Value;
+	int nType;
 };

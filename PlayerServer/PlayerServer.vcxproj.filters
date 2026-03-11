@@ -23,6 +23,7 @@
     <ClCompile Include="jsoncpp\json_writer.cpp">
       <Filter>jsoncpp</Filter>
     </ClCompile>
+    <ClCompile Include="MysqlClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CServer.h" />
@@ -80,6 +81,7 @@
     <ClInclude Include="jsoncpp\writer.h">
       <Filter>jsoncpp</Filter>
     </ClInclude>
+    <ClInclude Include="MysqlClient.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sqlite3">

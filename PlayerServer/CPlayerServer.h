@@ -9,6 +9,7 @@
 #include "jsoncpp/json.h"
 #include "HttpParser.h"
 #include "MysqlClient.h"
+#include "Crypto.h"
 
 DECLARE_TABLE_CLASS(user_mysql, _mysql_table_)
 DECLARE_MYSQL_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
@@ -54,6 +55,12 @@ public:
         : CBusiness(), m_count(count){}
 
     ~CPlayerServer(){
+        if (m_db) {
+            CDatabaseClient* db = m_db;
+            m_db = NULL;
+            db->Close();
+            delete db;
+        }
         m_epoll.Close();
         m_pool.Close();
         for (auto& it : m_mapClients) {
@@ -67,17 +74,30 @@ public:
     virtual int BusinessProcess(CProcess* proc) {
         using namespace std::placeholders;
         int ret = 0; 
+        m_db = new CMysqlClient();
+        if(m_db==NULL){
+            TRACEE("no more memory!");
+            return -1;
+		}
+        KeyValue args;
+        args["host"] = "192.168.1.100";
+        args["user"] = "root";
+        args["password"] = "123456";
+        args["port"] = 3306;
+        args["db"] = "edoyun";
+        ret = m_db->Connect(args);
+        ERR_RETURN(ret, -2);
         ret = setConnectedCallback(&CPlayerServer::Connected, this, _1);
-        ERR_RETURN(ret, -1);
+        ERR_RETURN(ret, -3);
         ret = setRecvCallback(&CPlayerServer::Received, this, _1, _2);
-        ERR_RETURN(ret, -2);
+        ERR_RETURN(ret, -4);
         ret = m_epoll.Create(m_count);
-        ERR_RETURN(ret, -1);
+        ERR_RETURN(ret, -5);
         ret = m_pool.Start(m_count);
-        ERR_RETURN(ret, -2);
+        ERR_RETURN(ret, -6);
         for (unsigned i = 0; i < m_count; i++) {
             ret = m_pool.AddTask(&CPlayerServer::ThreadFunc, this);
-            ERR_RETURN(ret, -3);
+            ERR_RETURN(ret, -7);
         }
         int sock = 0;
         sockaddr_in addrin;

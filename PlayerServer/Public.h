@@ -84,6 +84,8 @@ public:
     operator char* () const noexcept { return const_cast<char*>(buf_.data()); }
     operator unsigned char* () noexcept { return reinterpret_cast<unsigned char*>(buf_.data());}
     operator const unsigned char* () const noexcept { return reinterpret_cast<const unsigned char*>(buf_.data());}
+    char& operator[](size_t index) { return buf_[index]; }
+    const char& operator[](size_t index) const { return buf_[index]; }
 
     // 获取当前有效数据末尾的可写指针（用于 Recv 等直接写入场景）
     char* writable_tail(size_t need) {

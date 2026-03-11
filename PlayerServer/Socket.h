@@ -231,7 +231,7 @@ public:
     virtual int Recv(Buffer& data) {
         if (m_status < 2 || (m_socket == -1)) return -1; // 未连接/无效fd
 
-        ssize_t len = read(m_socket, data, data.size()); // 读入预分配缓冲(data.size())
+        ssize_t len = read(m_socket, data.data(), data.size()); // 读入预分配缓冲(data.size())
         if (len > 0) {
             data.resize(len); // 收缩为实际长度
             return (int)len;
