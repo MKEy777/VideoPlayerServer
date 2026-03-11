@@ -83,7 +83,7 @@ public:
         args["host"] = "192.168.1.100";
         args["user"] = "root";
         args["password"] = "123456";
-        args["port"] = 3306;
+        args["port"] = "3306";
         args["db"] = "edoyun";
         ret = m_db->Connect(args);
         ERR_RETURN(ret, -2);
@@ -219,6 +219,10 @@ private:
         }
         return -7;
     }
+
+    /*
+    将业务层处理的结果（错误码 ret），按照 HTTP/1.1 协议标准 和 JSON 数据格式，组装成可以直接通过 Socket 发送出去的完整网络字节流（报文）
+    */
     Buffer MakeResponse(int ret) {
         Json::Value root;
         root["status"] = ret;
@@ -234,9 +238,11 @@ private:
         time(&t);
         tm* ptm = localtime(&t);
         char temp[64] = "";
+        // Wed, 21 Oct 2015 07:28:00 GMT
         strftime(temp, sizeof(temp), "%a, %d %b %G %T GMT\r\n", ptm);
+        //strftime(temp, sizeof(temp), "%a, %d %b %Y %H:%M:%S GMT\r\n", ptm);
         Buffer Date = Buffer("Date: ") + temp;
-        Buffer Server = "Server: Edoyun/1.0\r\nContent-Type: text/html; charset=utf-8\r\nX-Frame-Options: DENY\r\n";
+        Buffer Server = "Server: Edoyun/1.0\r\nContent-Type: application/json; charset=utf-8\r\nX-Frame-Options: DENY\r\n";
         snprintf(temp, sizeof(temp), "%d", json.size());
         Buffer Length = Buffer("Content-Length: ") + temp + "\r\n";
         Buffer Stub = "X-Content-Type-Options: nosniff\r\nReferrer-Policy: same-origin\r\n\r\n";
@@ -270,37 +276,40 @@ private:
 
             for (ssize_t i = 0; i < size; i++) {
                 CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
-                printf("Event Triggered! ptr=%p events=%d\n", pClient, events[i].events);
+                TRACEI("Event Triggered! ptr=%p events=%d", pClient, events[i].events);
+                // 1. 处理连接错误事件
                 if (events[i].events & EPOLLERR) {
-                    printf("!! EPOLLERR detected on %p. Closing.\n", pClient);
-                    if (pClient) {
-                        m_epoll.Del(*pClient);
-                        delete pClient;
-                    }
+                    TRACEE("!! EPOLLERR detected on %p. Closing.", pClient);
+                    CloseClient(pClient); // 【修改点1】使用 CloseClient 代替手动 delete
                     continue;
                 }
-
+                // 2. 处理数据到达事件
                 if (events[i].events & EPOLLIN) {
                     if (!pClient) continue;
 
                     Buffer data(4096);
                     ret = pClient->Recv(data);
-                    printf("Recv result: ret=%d errno=%d\n", ret, errno);
+
                     if (ret > 0) {
-                        printf(">> Server Recv Success: %d bytes. Data: [%s] \n", ret, (char*)data);
+                        // 2.1 正常接收数据
                         if (m_recvcallback) {
                             (*m_recvcallback)(pClient, data);
                         }
+                        // 处理完毕，由于是 EPOLLONESHOT，需要重新挂载监听
                         m_epoll.Modify((int)(*pClient), EPOLLIN | EPOLLONESHOT, EpollData((void*)pClient));
-                        ret = 0;
+                        ret = 0; // 重置 ret，防止误触发后续的 WARN_CONTINUE
                     }
                     else if (ret < 0) {
-                        printf("!! Recv Failed. ret=%d errno=%d msg=%s\n", ret, errno, strerror(errno));
-                        m_epoll.Del(*pClient);
-                        delete pClient;
+                        // 2.2 接收异常 (底层 Socket 错误)
+                        TRACEE("!! Recv Failed. ret=%d errno=%d msg=%s", ret, errno, strerror(errno));
+                        CloseClient(pClient); // 【修改点2】回收资源
+                        ret = 0; // 错误已处理，为了日志整洁，重置 ret
                     }
                     else {
-                        m_epoll.Modify((int)(*pClient), EPOLLIN | EPOLLONESHOT, EpollData((void*)pClient));
+                        // 2.3 接收到 0 字节 (ret == 0)
+                        TRACEI(">> Client disconnected gracefully. ptr=%p", pClient);
+                        CloseClient(pClient);
+                        ret = 0;
                     }
 
                     WARN_CONTINUE(ret);
