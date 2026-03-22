@@ -280,7 +280,7 @@ private:
                 // 1. 处理连接错误事件
                 if (events[i].events & EPOLLERR) {
                     TRACEE("!! EPOLLERR detected on %p. Closing.", pClient);
-                    CloseClient(pClient); // 【修改点1】使用 CloseClient 代替手动 delete
+                    CloseClient(pClient); 
                     continue;
                 }
                 // 2. 处理数据到达事件
@@ -302,7 +302,7 @@ private:
                     else if (ret < 0) {
                         // 2.2 接收异常 (底层 Socket 错误)
                         TRACEE("!! Recv Failed. ret=%d errno=%d msg=%s", ret, errno, strerror(errno));
-                        CloseClient(pClient); // 【修改点2】回收资源
+                        CloseClient(pClient); 
                         ret = 0; // 错误已处理，为了日志整洁，重置 ret
                     }
                     else {

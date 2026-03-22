@@ -69,12 +69,13 @@ int CServer::Close()
 
 int CServer::ThreadFunc()
 {
+    TRACEI("epoll %d server %p", (int)m_epoll, m_server);
     EPEvents events;
 
     while ((m_epoll != -1) && (m_server != nullptr)) {
-        ssize_t size = m_epoll.WaitEvents(events);
+        ssize_t size = m_epoll.WaitEvents(events,500);
         if (size < 0) break;
-
+        TRACEI("size=%d event %08X", (int)size, events[0].events);
         for (ssize_t i = 0; i < size; i++) {
             if (events[i].events & EPOLLERR) {
                 break;
@@ -100,6 +101,6 @@ int CServer::ThreadFunc()
             }
         }
     }
-
+    TRACEI("服务器终止");
     return 0;
 }

@@ -15,6 +15,7 @@ enum SockAttr {
     SOCK_ISNONBLOCK = 2, // 是否非阻塞：1=非阻塞，0=阻塞
     SOCK_ISUDP = 4, // 是否 UDP：1=UDP，0=TCP
 	SOCK_ISIP = 8, // 是否网络套接字：1=IP，0=本地
+	SOCK_ISREUSE = 16 // 是否允许地址重用：1=允许，0=不允许 
 };
 
 //套接字参数封装类
@@ -162,7 +163,11 @@ public:
             ret = fcntl(m_socket, F_SETFL, option);
             if (ret == -1) return -6;
         }
-
+        if(m_param.attr&SOCK_ISREUSE) { // 设置地址重用
+            int option = 1;
+            ret = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+            if (ret == -1) return -7;
+		}
         if (m_status == 0)
             m_status = 1; // 初始化完成
         return 0;

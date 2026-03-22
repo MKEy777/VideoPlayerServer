@@ -203,26 +203,30 @@ int UrlParser::Parser()
     // URI
     pos = strchr(pos, '/');
     target = strchr(pos, '?');
-    if (!target)
-    {
-        m_uri = pos;
+    if (target == NULL) {
+        m_uri = pos + 1;
         return 0;
     }
-
-    m_uri = Buffer(pos, target);
-
-    // 参数
-    pos = target + 1;
-    while (pos)
-    {
-        const char* next = strchr(pos, '&');
-        Buffer kv = next ? Buffer(pos, next) : Buffer(pos);
-        const char* eq = strchr(kv, '=');
-        if (!eq) return -3;
-
-        m_values[Buffer(kv, eq)] = Buffer(eq + 1, kv.end());
-        if (!next) break;
-        pos = next + 1;
+    else {
+        m_uri = Buffer(pos + 1, target);
+        //解析key和value
+        pos = target + 1;
+        const char* t = NULL;
+        do {
+            target = strchr(pos, '&');
+            if (target == NULL) {
+                t = strchr(pos, '=');
+                if (t == NULL)return -4;
+                m_values[Buffer(pos, t)] = Buffer(t + 1);
+            }
+            else {
+                Buffer kv(pos, target);
+                t = strchr(kv, '=');
+                if (t == NULL)return -5;
+                m_values[Buffer(kv, t)] = Buffer(t + 1, (char*)kv + kv.size());
+                pos = target + 1;
+            }
+        } while (target != NULL);
     }
 
     return 0;
