@@ -112,7 +112,7 @@ int Main()
 	ERR_RETURN(ret, -2);
 	CPlayerServer business(2);
 	CServer server;
-	ret = server.Init(&business);
+	ret = server.Init(&business, "0.0.0.0", 19527);
 	ERR_RETURN(ret, -3);
 	ret = server.Run();
 	ERR_RETURN(ret, -4);

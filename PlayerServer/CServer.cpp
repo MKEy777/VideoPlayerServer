@@ -75,8 +75,9 @@ int CServer::ThreadFunc()
     while ((m_epoll != -1) && (m_server != nullptr)) {
         ssize_t size = m_epoll.WaitEvents(events,500);
         if (size < 0) break;
-        TRACEI("size=%d event %08X", (int)size, events[0].events);
+      
         for (ssize_t i = 0; i < size; i++) {
+            TRACEI("size=%d event %08X", (int)size, events[0].events);
             if (events[i].events & EPOLLERR) {
                 break;
             }

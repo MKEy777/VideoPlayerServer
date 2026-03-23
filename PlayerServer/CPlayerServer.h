@@ -80,7 +80,7 @@ public:
             return -1;
 		}
         KeyValue args;
-        args["host"] = "192.168.1.100";
+        args["host"] = "127.0.0.1";
         args["user"] = "root";
         args["password"] = "123456";
         args["port"] = "3306";
