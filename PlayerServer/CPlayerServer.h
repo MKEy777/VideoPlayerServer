@@ -10,6 +10,7 @@
 #include "HttpParser.h"
 #include "MysqlClient.h"
 #include "Crypto.h"
+#include <mutex>
 
 DECLARE_TABLE_CLASS(user_mysql, _mysql_table_)
 DECLARE_MYSQL_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
@@ -138,7 +139,7 @@ private:
         return 0;
     }
     int Received(CSocketBase* pClient, const Buffer& data) {
-        TRACEI("接收到数据！");
+        TRACEI("HTTPdata has been received!");
         //TODO:主要业务，在此处理
         //HTTP 解析
         int ret = 0;
@@ -182,30 +183,44 @@ private:
                 Buffer salt = url["salt"];
                 Buffer user = url["user"];
                 Buffer sign = url["sign"];
-                TRACEI("time %s salt %s user %s sign %s", (char*)time, (char*)salt, (char*)user, (char*)sign);
+                TRACEI("time=%s salt=%s user=%s sign=%s", (char*)time, (char*)salt, (char*)user, (char*)sign);
                 //数据库的查询
                 user_mysql dbuser;
                 Result result;
                 Buffer sql = dbuser.Query("user_name=\"" + user + "\"");
-                ret = m_db->Exec(sql, result, dbuser);
-                if (ret != 0) {
-                    TRACEE("sql=%s ret=%d", (char*)sql, ret);
-                    return -3;
+                Buffer pwd;
+                {
+                    std::lock_guard<std::mutex> lock(m_dbMutex);
+                    int ret = m_db->Exec(sql, result, dbuser);
+                    if (ret != 0) {
+                        TRACEE("sql=%s ret=%d", (char*)sql, ret);
+                        return -3;
+                    }
+                    if (result.size() == 0) {
+                        TRACEE("no result sql=%s ret=%d", (char*)sql, ret);
+                        return -4;
+                    }
+                    if (result.size() != 1) {
+                        TRACEE("more than one sql=%s ret=%d", (char*)sql, ret);
+                        return -5;
+                    }
+
+                    auto user1 = result.front();
+                    //for (auto& kv : user1->Fields) {
+                    //    TRACEI("Field key: [%s]", (char*)kv.first);
+                    //}
+                    auto it = user1->Fields.find("user_password");
+                    if (it == user1->Fields.end() || it->second->Value.String == nullptr) {
+                        TRACEE("password field missing or null");
+                        return -7;
+                    }
+                    pwd = *it->second->Value.String;
                 }
-                if (result.size() == 0) {
-                    TRACEE("no result sql=%s ret=%d", (char*)sql, ret);
-                    return -4;
-                }
-                if (result.size() != 1) {
-                    TRACEE("more than one sql=%s ret=%d", (char*)sql, ret);
-                    return -5;
-                }
-                auto user1 = result.front();
-                Buffer pwd = *user1->Fields["user_password"]->Value.String;
                 TRACEI("password = %s", (char*)pwd);
                 //登录请求的验证
                 const char* MD5_KEY = "*&^%$#@b.v+h-b*g/h@n!h#n$d^ssx,.kl<kl";
                 Buffer md5str = time + MD5_KEY + pwd + salt;
+                TRACEI("md5str = %s", (char*)md5str);
                 Buffer md5 = Crypto::MD5(md5str);
                 TRACEI("md5 = %s", (char*)md5);
                 if (md5 == sign) {
@@ -227,7 +242,7 @@ private:
         Json::Value root;
         root["status"] = ret;
         if (ret != 0) {
-            root["message"] = "登录失败，可能是用户名或者密码错误！";
+            root["message"] = "Login failed, the username or password may be incorrect！";
         }
         else {
             root["message"] = "success";
@@ -267,56 +282,42 @@ private:
 private:
     int ThreadFunc()
     {
-        int ret = 0;
         EPEvents events;
-
         while (m_epoll != -1) {
             ssize_t size = m_epoll.WaitEvents(events);
             if (size < 0) break;
 
             for (ssize_t i = 0; i < size; i++) {
                 CSocketBase* pClient = (CSocketBase*)events[i].data.ptr;
-                TRACEI("Event Triggered! ptr=%p events=%d", pClient, events[i].events);
-                // 1. 处理连接错误事件
+                if (!pClient) continue;
+
                 if (events[i].events & EPOLLERR) {
-                    TRACEE("!! EPOLLERR detected on %p. Closing.", pClient);
-                    CloseClient(pClient); 
+                    TRACEE("EPOLLERR detected on %p", pClient);
+                    CloseClient(pClient);
                     continue;
                 }
-                // 2. 处理数据到达事件
-                if (events[i].events & EPOLLIN) {
-                    if (!pClient) continue;
 
+                if (events[i].events & EPOLLIN) {
                     Buffer data(4096);
-                    ret = pClient->Recv(data);
+                    int ret = pClient->Recv(data);
 
                     if (ret > 0) {
-                        // 2.1 正常接收数据
                         if (m_recvcallback) {
                             (*m_recvcallback)(pClient, data);
                         }
-                        // 处理完毕，由于是 EPOLLONESHOT，需要重新挂载监听
                         m_epoll.Modify((int)(*pClient), EPOLLIN | EPOLLONESHOT, EpollData((void*)pClient));
-                        ret = 0; // 重置 ret，防止误触发后续的 WARN_CONTINUE
                     }
-                    else if (ret < 0) {
-                        // 2.2 接收异常 (底层 Socket 错误)
-                        TRACEE("!! Recv Failed. ret=%d errno=%d msg=%s", ret, errno, strerror(errno));
-                        CloseClient(pClient); 
-                        ret = 0; // 错误已处理，为了日志整洁，重置 ret
+                    else if (ret == -3) {
+                        TRACEI("Client disconnected ptr=%p", pClient);
+                        CloseClient(pClient);
                     }
                     else {
-                        // 2.3 接收到 0 字节 (ret == 0)
-                        TRACEI(">> Client disconnected gracefully. ptr=%p", pClient);
+                        TRACEE("Recv Failed. ret=%d errno=%d msg=%s", ret, errno, strerror(errno));
                         CloseClient(pClient);
-                        ret = 0;
                     }
-
-                    WARN_CONTINUE(ret);
                 }
             }
         }
-
         return 0;
     }
 
@@ -326,4 +327,5 @@ private:
     CThreadPool m_pool;
     unsigned m_count = 0;
     CDatabaseClient* m_db;
+    std::mutex m_dbMutex;
 };

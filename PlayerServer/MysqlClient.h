@@ -101,13 +101,7 @@ public:
 	virtual operator const Buffer() const;
 private:
 	Buffer Str2Hex(const Buffer& data) const;
-	union {
-		bool Bool;
-		int Integer;
-		double Double;
-		Buffer* String;
-	}Value;
-	int nType;
+
 };
 
 #define DECLARE_TABLE_CLASS(name, base) class name:public base { \

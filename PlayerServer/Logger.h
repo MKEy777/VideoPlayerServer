@@ -118,7 +118,7 @@ public:
             Close();
             return -4;
         }
-
+        unlink("./log/server.sock");
         // 初始化服务端 socket（绑定 ./log/server.sock 并监听）
         if (m_server->Init(CSockParam("./log/server.sock",
             (int)SOCK_ISSERVER)) != 0) {
