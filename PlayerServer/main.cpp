@@ -182,9 +182,151 @@ int http_test()
 	return 0;
 }
 
+#include "Sqlite3Client.h"
+DECLARE_TABLE_CLASS(user_test, _sqlite3_table_)
+DECLARE_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
+DECLARE_FIELD(TYPE_VARCHAR, user_qq, NOT_NULL, "VARCHAR", "(15)", "", "")
+DECLARE_FIELD(TYPE_VARCHAR, user_phone, NOT_NULL | DEFAULT, "VARCHAR", "(12)", "18888888888", "")
+DECLARE_FIELD(TYPE_TEXT, user_name, 0, "TEXT", "", "", "")
+DECLARE_TABLE_CLASS_EDN()
+
+/*class user_test :public _sqlite3_table_
+{
+public:
+	virtual PTable Copy() const {
+		return PTable(new user_test(*this));
+	}
+	user_test() :_sqlite3_table_() {
+		Name = "user_test";
+		{
+			PField field(new _sqlite3_field_(TYPE_INT, "user_id", NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INT", "", "", ""));
+			FieldDefine.push_back(field);
+			Fields["user_id"] = field;
+		}
+		{
+			PField field(new _sqlite3_field_(TYPE_VARCHAR, "user_qq", NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "VARCHAR", "(15)", "", ""));
+			FieldDefine.push_back(field);
+			Fields["user_qq"] = field;
+		}
+	}
+};*/
+
+int sql_test()
+{
+	user_test test, value;
+	printf("create:%s\n", (char*)test.Create());
+	printf("Delete:%s\n", (char*)test.Delete(test));
+	value.Fields["user_qq"]->LoadFromStr("1817619619");
+	value.Fields["user_qq"]->Condition = SQL_INSERT;
+	printf("Insert:%s\n", (char*)test.Insert(value));
+	value.Fields["user_qq"]->LoadFromStr("123456789");
+	value.Fields["user_qq"]->Condition = SQL_MODIFY;
+	printf("Modify:%s\n", (char*)test.Modify(value));
+	printf("Query:%s\n", (char*)test.Query());
+	printf("Drop:%s\n", (char*)test.Drop());
+	getchar();
+	int ret = 0;
+	CDatabaseClient* pClient = new CSqlite3Client();
+	KeyValue args;
+	args["host"] = "test.db";
+	ret = pClient->Connect(args);
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Create());
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Delete(value));
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	value.Fields["user_qq"]->LoadFromStr("1817619619");
+	value.Fields["user_qq"]->Condition = SQL_INSERT;
+	ret = pClient->Exec(test.Insert(value));
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	value.Fields["user_qq"]->LoadFromStr("123456789");
+	value.Fields["user_qq"]->Condition = SQL_MODIFY;
+	ret = pClient->Exec(test.Modify(value));
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	Result result;
+	ret = pClient->Exec(test.Query(), result, test);
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Drop());
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Close();
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	//getchar();
+	return 0;
+}
+
+#include "MysqlClient.h"
+DECLARE_TABLE_CLASS(user_test_mysql, _mysql_table_)
+DECLARE_MYSQL_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
+DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_qq, NOT_NULL, "VARCHAR", "(15)", "", "")
+DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_phone, NOT_NULL | DEFAULT, "VARCHAR", "(12)", "18888888888", "")
+DECLARE_MYSQL_FIELD(TYPE_TEXT, user_name, 0, "TEXT", "", "", "")
+DECLARE_TABLE_CLASS_EDN()
+
+int mysql_test()
+{
+	user_test_mysql test, value;
+	printf("create:%s\n", (char*)test.Create());
+	printf("Delete:%s\n", (char*)test.Delete(test));
+	value.Fields["user_qq"]->LoadFromStr("1817619619");
+	value.Fields["user_qq"]->Condition = SQL_INSERT;
+	printf("Insert:%s\n", (char*)test.Insert(value));
+	value.Fields["user_qq"]->LoadFromStr("123456789");
+	value.Fields["user_qq"]->Condition = SQL_MODIFY;
+	printf("Modify:%s\n", (char*)test.Modify(value));
+	printf("Query:%s\n", (char*)test.Query());
+	printf("Drop:%s\n", (char*)test.Drop());
+	getchar();
+	int ret = 0;
+	CDatabaseClient* pClient = new CMysqlClient();
+	KeyValue args;
+	args["host"] = "192.168.1.100";
+	args["user"] = "root";
+	args["password"] = "123456";
+	args["port"] = "3306";
+	args["db"] = "edoyun";
+	ret = pClient->Connect(args);
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Create());
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Delete(value));
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	value.Fields["user_qq"]->LoadFromStr("1817619619");
+	value.Fields["user_qq"]->Condition = SQL_INSERT;
+	ret = pClient->Exec(test.Insert(value));
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	value.Fields["user_qq"]->LoadFromStr("123456789");
+	value.Fields["user_qq"]->Condition = SQL_MODIFY;
+	ret = pClient->Exec(test.Modify(value));
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	Result result;
+	ret = pClient->Exec(test.Query(), result, test);
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Drop());
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Close();
+	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	//getchar();
+	return 0;
+}
+
+#include "Crypto.h"
+int crypto_test()
+{
+	Buffer data = "abcdef";
+	data = Crypto::MD5(data);
+	printf("except E80B5017098950FC58AAD83C8C14978E %s\n", (char*)data);
+	return 0;
+}
+
 int main()
 {
-	int ret = http_test();
+	int ret = 0;
+	//int ret = http_test();
+	//ret = sql_test();
+	//ret = mysql_test();
+	//ret = crypto_test();
+	ret = Main();
 	printf("main:ret = %d\n", ret);
 	return ret;
 }
+
