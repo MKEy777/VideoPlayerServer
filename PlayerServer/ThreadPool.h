@@ -1,10 +1,10 @@
 #pragma once
-
 #include "Epoll.h"
 #include "Thread.h"
 #include "Function.h"
 #include "Socket.h"
 
+//本地套接字 (Unix Domain Socket) + Epoll 来做任务分发
 class CThreadPool
 {
 public:
@@ -82,6 +82,7 @@ public:
         unlink(m_path);
     }
 
+    // 模板函数，允许投递任意签名的函数及参数到线程池执行
     template<typename _FUNCTION_, typename... _ARGS_>
     int AddTask(_FUNCTION_ func, _ARGS_... args)
     {
@@ -136,8 +137,7 @@ private:
                                 continue;
                             }
                         }
-                        else {
-                            // 客户端数据
+                        else {// 客户端发送数据
                             CSocketBase* pClient =
                                 (CSocketBase*)events[i].data.ptr;
 
@@ -145,7 +145,6 @@ private:
 
                             CFunctionBase* base = nullptr;
                             Buffer data(sizeof(base));
-                            //data.resize(sizeof(base));
 
                             int ret = pClient->Recv(data);
                             if (ret <= 0) {
@@ -168,8 +167,8 @@ private:
     }
 
 private:
-    CEpoll m_epoll;
+	CEpoll m_epoll;         // Epoll 实例
     std::vector<CThread*> m_threads;
-    CSocketBase* m_server;
-    Buffer m_path;
+    CSocketBase* m_server;  // 任务接收服务端
+    Buffer m_path;          // 本地 Socket 文件路径
 };

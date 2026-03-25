@@ -22,7 +22,7 @@ template <typename _FUNCTION_, typename... _ARGS_>
 class CFunction : public CFunctionBase
 {
 public:
-    // 构造函数：使用 std::bind 绑定函数和参数
+    // 利用 std::forward 完美转发函数及其参数，并存储在 std::bind 中
     CFunction(_FUNCTION_ func, _ARGS_... args)
         : m_binder(std::bind(std::move(func), std::move(args)...))
     {}
@@ -33,6 +33,7 @@ public:
     }
 
 private:
+    // 使用 std::function 存储绑定后的可执行体
     std::function<int()> m_binder;
 };
 

@@ -10,7 +10,7 @@
 class CProcess {
 public:
     CProcess() : m_func(nullptr), m_pid(-1) {
-        memset(pipes, 0, sizeof(pipes));
+        memset(pipes,-1, sizeof(pipes));
     }
 
     // 手动管理内存：析构时释放原始指针
@@ -28,7 +28,7 @@ public:
         // 如果多次调用 SetEntryFunction，先清理旧的
         if (m_func) {delete m_func;}
 
-        // 1. 使用 std::decay 处理类型，防止引用退化导致的悬空指针
+        // 1. 使用 std::decay 处理类型，去除引用和 const 修饰符
         // 2. 使用原始指针 new 分配对象
         typedef CFunction<
             typename std::decay<_FUNCTION_>::type,
@@ -67,7 +67,7 @@ public:
         memset(&msg, 0, sizeof(msg)); // 必须初始化
 
         iovec iov[2];
-        char buf[2][10] = { "edoyun", "jueding" };
+        char buf[2][10] = { "e", "j" };
         iov[0].iov_base = buf[0];
         iov[0].iov_len = sizeof(buf[0]);
         iov[1].iov_base = buf[1];
@@ -111,7 +111,7 @@ public:
         msg.msg_control = cmsg;
         msg.msg_controllen = cm_len;
 
-        ssize_t ret = recvmsg(pipes[0], &msg, 0);
+		ssize_t ret = recvmsg(pipes[0], &msg, 0);//阻塞等待父进程发送数据
         if (ret <= 0) {
             free(cmsg);
             return -1;
@@ -135,13 +135,14 @@ public:
         iovec iov;
         char buf[20] = "";
         bzero(&msg, sizeof(msg));
+
+        //将客户端的 sockaddr_in传递
         memcpy(buf, addrin, sizeof(sockaddr_in));
         iov.iov_base = buf;
         iov.iov_len = sizeof(buf);
         msg.msg_iov = &iov;
         msg.msg_iovlen = 1;
 
-        // 下面的数据，才是我们需要传递的。
         cmsghdr* cmsg = (cmsghdr*)calloc(1, CMSG_LEN(sizeof(int)));
         if (cmsg == NULL)return -1;
         cmsg->cmsg_len = CMSG_LEN(sizeof(int));
@@ -149,7 +150,7 @@ public:
         cmsg->cmsg_type = SCM_RIGHTS;
         *(int*)CMSG_DATA(cmsg) = fd;
         msg.msg_control = cmsg;
-        msg.msg_controllen = cmsg->cmsg_len;
+        msg.msg_controllen = CMSG_SPACE(sizeof(int));
 
         ssize_t ret = sendmsg(pipes[1], &msg, 0);
         free(cmsg);
@@ -189,25 +190,36 @@ public:
         return 0;
     }
 
+    // 静态函数：让当前进程脱离终端控制，变成后台常驻守护进程
     static int SwitchDeamon() {
+        // 第一步：第一次 fork
         pid_t ret = fork();
         if (ret == -1) return -1;
-        if (ret > 0) exit(0);//主进程到此为止//子进程内容如下
+        if (ret > 0) exit(0); // 主进程直接退出。此时子进程会被 init/systemd 进程接管
+
+        // 第二步：创建新的会话，脱离原控制终端
         ret = setsid();
-        if (ret == -1) return -2;//失败，则返回
+        if (ret == -1) return -2;
+
+        // 第三步：第二次 fork (防止进程再次打开控制终端)
         ret = fork();
         if (ret == -1) return -3;
-        if (ret > 0) exit(0);//子进程到此为止
-        //孙进程的内容如下，进入守护状态
-        for (int i = 0; i < 3; i++)
-            close(i);
+        if (ret > 0) exit(0); // 子进程也退出
+
+        // 孙进程(守护进程)
+        // 关闭标准输入、标准输出、标准错误（0, 1, 2）
+        for (int i = 0; i < 3; i++) close(i);
+
+        // 重置文件权限掩码，使得它创建的文件具有最高权限
         umask(0);
+
+        // 忽略子进程退出信号，防止产生僵尸进程
         signal(SIGCHLD, SIG_IGN);
         return 0;
     }
 
 private:
     CFunctionBase* m_func;
-    pid_t m_pid;
-    int pipes[2];
+    pid_t m_pid;//保存 fork()出来的子进程 ID
+    int pipes[2];//存放 socketpair 创建的两个套接字句柄
 };

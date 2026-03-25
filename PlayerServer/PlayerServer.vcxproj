@@ -78,7 +78,6 @@
     <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="CServer.cpp" />
     <ClCompile Include="DatabaseHelper.cpp" />
-    <ClCompile Include="Epoll.cpp" />
     <ClCompile Include="HttpParser.cpp" />
     <ClCompile Include="http_parser.c">
       <CAdditionalWarning Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">switch;no-deprecated-declarations;empty-body;return-type;parentheses;no-pointer-sign;no-format;uninitialized;unreachable-code;unused-function;unused-value;unused-variable;%(CAdditionalWarning)</CAdditionalWarning>

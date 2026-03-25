@@ -7,14 +7,14 @@
 #include "Function.h"
 #include <cstdio>
 #include <errno.h>
-
+#include <memory>
 
 class CThread
 {
 public:
     CThread()
     {
-        m_function = NULL;     // 线程执行函数对象
+        m_function = nullptr;     // 线程执行函数对象
         m_thread = 0;          // pthread 线程ID，0表示未创建
         m_bpaused = false;     // 暂停标志
     }
@@ -28,7 +28,12 @@ public:
         m_bpaused = false;
     }
 
-    ~CThread() {}
+    ~CThread() {
+        if (m_function != NULL) {
+            delete m_function;
+            m_function = NULL;
+        }
+    }
 
 public:
     CThread(const CThread&) = delete;
@@ -39,6 +44,10 @@ public:
     template<typename _FUNCTION_, typename... _ARGS_>
     int SetThreadFunc(_FUNCTION_ func, _ARGS_... args)
     {
+        if (m_function != NULL) {
+            delete m_function;
+            m_function = NULL;
+        }
         m_function = new CFunction<_FUNCTION_, _ARGS_...>(func, args...);
         if (m_function == NULL) return -1;
         return 0;
@@ -147,7 +156,7 @@ private:
         sigemptyset(&act.sa_mask);
         act.sa_flags = SA_SIGINFO;
         act.sa_sigaction = &CThread::Sigaction;
-
+		//注册信号处理函数,收到指定信号时调用回调
         sigaction(SIGUSR1, &act, NULL); // 暂停控制
         sigaction(SIGUSR2, &act, NULL); // 强制退出
 

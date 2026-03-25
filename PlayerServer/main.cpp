@@ -14,7 +14,6 @@ int CreateLogServer(CProcess* proc)
 		ret = proc->RecvFD(fd);
 		printf("%s(%d):<%s> fd=%d\n", __FILE__, __LINE__, __FUNCTION__, fd);
 		if (fd <= 0)break;
-		//close(fd);
 	}
 	ret = server.Close();
 	printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
@@ -101,23 +100,6 @@ int old_test()
 	return 0;
 }
 
-
-int Main()
-{
-	int ret = 0;
-	CProcess proclog;
-	ret = proclog.SetEntryFunction(CreateLogServer, &proclog);
-	ERR_RETURN(ret, -1);
-	ret = proclog.CreateSubProcess();
-	ERR_RETURN(ret, -2);
-	CPlayerServer business(2);
-	CServer server;
-	ret = server.Init(&business, "0.0.0.0", 19527);
-	ERR_RETURN(ret, -3);
-	ret = server.Run();
-	ERR_RETURN(ret, -4);
-	return 0;
-}
 
 #include "HttpParser.h"
 
@@ -315,6 +297,23 @@ int crypto_test()
 	Buffer data = "abcdef";
 	data = Crypto::MD5(data);
 	printf("except E80B5017098950FC58AAD83C8C14978E %s\n", (char*)data);
+	return 0;
+}
+
+int Main()
+{
+	int ret = 0;
+	CProcess proclog;//启动日志子进程
+	ret = proclog.SetEntryFunction(CreateLogServer, &proclog);
+	ERR_RETURN(ret, -1);
+	ret = proclog.CreateSubProcess();
+	ERR_RETURN(ret, -2);
+	CPlayerServer business(2);//创建业务对象
+	CServer server;//启动服务器
+	ret = server.Init(&business, "0.0.0.0", 19527);
+	ERR_RETURN(ret, -3);
+	ret = server.Run();
+	ERR_RETURN(ret, -4);
 	return 0;
 }
 

@@ -306,12 +306,10 @@ private:
                             (*m_recvcallback)(pClient, data);
                         }
                         m_epoll.Modify((int)(*pClient), EPOLLIN | EPOLLONESHOT, EpollData((void*)pClient));
-                    }
-                    else if (ret == -3) {
+                    }else if (ret == -3) {
                         TRACEI("Client disconnected ptr=%p", pClient);
                         CloseClient(pClient);
-                    }
-                    else {
+                    }else {
                         TRACEE("Recv Failed. ret=%d errno=%d msg=%s", ret, errno, strerror(errno));
                         CloseClient(pClient);
                     }

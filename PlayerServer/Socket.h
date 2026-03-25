@@ -7,9 +7,6 @@
 #include <fcntl.h>
 #include "Public.h"
 
-
-
-
 enum SockAttr {
     SOCK_ISSERVER = 1, // 是否服务器：1=服务器，0=客户端
     SOCK_ISNONBLOCK = 2, // 是否非阻塞：1=非阻塞，0=阻塞
@@ -35,7 +32,7 @@ public:
         addr_in.sin_family = AF_INET;
         addr_in.sin_port = htons(static_cast<uint16_t>(port));
 
-        // 推荐 inet_pton
+        // 把字符串 IP 转成二进制地址
         if (::inet_pton(AF_INET, ip.c_str(), &addr_in.sin_addr) != 1) {
             // 解析失败：你可以选择置 0 或留给上层处理
             addr_in.sin_addr.s_addr = INADDR_NONE;
@@ -54,11 +51,20 @@ public:
         addr_un.sun_path[sizeof(addr_un.sun_path) - 1] = '\0';
     }
 
-    CSockParam(const sockaddr_in* addrin, int attr) {
-        this->ip = ip;
-        this->port = port;
-        this->attr = attr;
-        memcpy(&addr_in, addrin, sizeof(addr_in));
+    // 从 sockaddr_in 构造
+    CSockParam(const sockaddr_in* addrin, int attr) : port(-1), attr(attr) {
+        std::memset(&addr_in, 0, sizeof(addr_in));
+        std::memset(&addr_un, 0, sizeof(addr_un));
+
+        if (addrin) {
+            std::memcpy(&addr_in, addrin, sizeof(addr_in));
+            this->port = ntohs(addr_in.sin_port); // 解析端口
+
+            char ip_str[INET_ADDRSTRLEN] = { 0 };
+            if (::inet_ntop(AF_INET, &addr_in.sin_addr, ip_str, sizeof(ip_str)) != nullptr) {
+                this->ip = ip_str; // 解析 IP
+            }
+        }
     }
 
     sockaddr* addrin() { return reinterpret_cast<sockaddr*>(&addr_in); }
@@ -138,11 +144,18 @@ public:
                 m_socket = socket(AF_INET, type, 0); // 网络套接字
             else
                 m_socket = socket(AF_UNIX, type, 0); // 本地套接字
-        }
-        else m_status = 2;
+        }else m_status = 2;
+
         if (m_socket == -1) return -2;
 
         int ret = 0;
+
+        if (m_param.attr & SOCK_ISREUSE) { // 设置地址重用
+            int option = 1;
+            ret = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+            if (ret == -1) return -7;
+        }
+
         if (m_param.attr & SOCK_ISSERVER) { // 服务器：bind + listen
             if (m_param.attr & SOCK_ISIP) {
 				ret = bind(m_socket, m_param.addrin(), sizeof(sockaddr_in));//网络套接字
@@ -163,17 +176,13 @@ public:
             ret = fcntl(m_socket, F_SETFL, option);
             if (ret == -1) return -6;
         }
-        if(m_param.attr&SOCK_ISREUSE) { // 设置地址重用
-            int option = 1;
-            ret = setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
-            if (ret == -1) return -7;
-		}
+        
         if (m_status == 0)
             m_status = 1; // 初始化完成
         return 0;
     }
 
-    virtual int Link(CSocketBase** pClient = NULL) {// 传入“指针的地址”
+    virtual int Link(CSocketBase** pClient = NULL) {// 传入指针的地址
         if (m_status <= 0 || (m_socket == -1)) return -1; // 未初始化/无效fd
 
         int ret = 0;
@@ -201,8 +210,7 @@ public:
                 *pClient = NULL;
                 return -5;
             }
-        }
-        else { // 客户端：connect
+        }else { // 客户端：connect
             if (m_param.attr & SOCK_ISIP) {
                 ret = connect(m_socket, m_param.addrin(), sizeof(sockaddr_in));
 			}else {

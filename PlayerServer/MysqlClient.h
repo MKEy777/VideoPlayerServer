@@ -104,12 +104,27 @@ private:
 
 };
 
-#define DECLARE_TABLE_CLASS(name, base) class name:public base { \
+// 1. 定义表类的起始宏：负责类声明、继承以及构造函数的前半段
+#define DECLARE_TABLE_CLASS(name, base) \
+class name : public base { \
 public: \
-virtual PTable Copy() const {return PTable(new name(*this));} \
-name():base(){Name=#name;
+    /* 提供多态深拷贝能力，返回当前对象的智能指针 */ \
+    virtual PTable Copy() const { return PTable(new name(*this)); } \
+    /* 构造函数 */ \
+    name() : base() { Name = #name; 
 
-#define DECLARE_MYSQL_FIELD(ntype,name,attr,type,size,default_,check) \
-{PField field(new _mysql_field_(ntype, #name, attr, type, size, default_, check));FieldDefine.push_back(field);Fields[#name] = field; }
+// 2. 注册表字段的宏
+#define DECLARE_MYSQL_FIELD(ntype, name, attr, type, size, default_, check) \
+{ \
+    /* 动态分配一个字段描述对象，#name 将变量名直接转为字符串 */ \
+    PField field(new _mysql_field_(ntype, #name, attr, type, size, default_, check)); \
+    /* 将字段压入基类的顺序列表中 */ \
+    FieldDefine.push_back(field); \
+    /* 将字段压入基类的字典中 */ \
+    Fields[#name] = field; \
+}
 
-#define DECLARE_TABLE_CLASS_EDN() }};
+// 3. 定义表类的结束宏：负责将构造函数和整个类闭合
+#define DECLARE_TABLE_CLASS_EDN() \
+    } \
+}; /* 第一个 } 闭合构造函数，第二个 }; 闭合整个 class */
