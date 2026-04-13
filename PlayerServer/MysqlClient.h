@@ -105,7 +105,7 @@ private:
 };
 
 // 1. 定义表类的起始宏：负责类声明、继承以及构造函数的前半段
-#define DECLARE_TABLE_CLASS(name, base) \
+#define DECLARE_MYSQL_TABLE_CLASS(name, base) \
 class name : public base { \
 public: \
     /* 提供多态深拷贝能力，返回当前对象的智能指针 */ \
@@ -125,6 +125,14 @@ public: \
 }
 
 // 3. 定义表类的结束宏：负责将构造函数和整个类闭合
-#define DECLARE_TABLE_CLASS_EDN() \
+#define DECLARE_MYSQL_TABLE_CLASS_EDN() \
     } \
 }; /* 第一个 } 闭合构造函数，第二个 }; 闭合整个 class */
+
+#ifndef DECLARE_TABLE_CLASS
+#define DECLARE_TABLE_CLASS(name, base) DECLARE_MYSQL_TABLE_CLASS(name, base)
+#endif
+
+#ifndef DECLARE_TABLE_CLASS_EDN
+#define DECLARE_TABLE_CLASS_EDN() DECLARE_MYSQL_TABLE_CLASS_EDN()
+#endif

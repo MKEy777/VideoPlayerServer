@@ -165,12 +165,12 @@ int http_test()
 }
 
 #include "Sqlite3Client.h"
-DECLARE_TABLE_CLASS(user_test, _sqlite3_table_)
+DECLARE_SQLITE_TABLE_CLASS(user_test, _sqlite3_table_)
 DECLARE_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
 DECLARE_FIELD(TYPE_VARCHAR, user_qq, NOT_NULL, "VARCHAR", "(15)", "", "")
 DECLARE_FIELD(TYPE_VARCHAR, user_phone, NOT_NULL | DEFAULT, "VARCHAR", "(12)", "18888888888", "")
 DECLARE_FIELD(TYPE_TEXT, user_name, 0, "TEXT", "", "", "")
-DECLARE_TABLE_CLASS_EDN()
+DECLARE_SQLITE_TABLE_CLASS_EDN()
 
 /*class user_test :public _sqlite3_table_
 {
@@ -237,12 +237,12 @@ int sql_test()
 }
 
 #include "MysqlClient.h"
-DECLARE_TABLE_CLASS(user_test_mysql, _mysql_table_)
+DECLARE_MYSQL_TABLE_CLASS(user_test_mysql, _mysql_table_)
 DECLARE_MYSQL_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
 DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_qq, NOT_NULL, "VARCHAR", "(15)", "", "")
 DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_phone, NOT_NULL | DEFAULT, "VARCHAR", "(12)", "18888888888", "")
 DECLARE_MYSQL_FIELD(TYPE_TEXT, user_name, 0, "TEXT", "", "", "")
-DECLARE_TABLE_CLASS_EDN()
+DECLARE_MYSQL_TABLE_CLASS_EDN()
 
 int mysql_test()
 {
@@ -310,7 +310,11 @@ int Main()
 	ERR_RETURN(ret, -2);
 	CPlayerServer business(2);//创建业务对象
 	CServer server;//启动服务器
-	ret = server.Init(&business, "0.0.0.0", 19527);
+
+	NetRuntimeConfig runtimeCfg = NetRuntimeConfig::LoadFromEnvAndFile();
+	TRACEI("startup network config: %s", (const char*)runtimeCfg.ToString());
+
+	ret = server.Init(&business, runtimeCfg, "0.0.0.0", 19527);
 	ERR_RETURN(ret, -3);
 	ret = server.Run();
 	ERR_RETURN(ret, -4);

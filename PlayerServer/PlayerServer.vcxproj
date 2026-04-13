@@ -78,6 +78,7 @@
     <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="CServer.cpp" />
     <ClCompile Include="DatabaseHelper.cpp" />
+    <ClCompile Include="DpdkRuntime.cpp" />
     <ClCompile Include="HttpParser.cpp" />
     <ClCompile Include="http_parser.c">
       <CAdditionalWarning Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">switch;no-deprecated-declarations;empty-body;return-type;parentheses;no-pointer-sign;no-format;uninitialized;unreachable-code;unused-function;unused-value;unused-variable;%(CAdditionalWarning)</CAdditionalWarning>
@@ -111,6 +112,7 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MysqlClient.cpp" />
+    <ClCompile Include="NetRuntimeConfig.cpp" />
     <ClCompile Include="Sqlite3Client.cpp" />
     <ClCompile Include="sqlite3\sqlite3.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">false</ExcludedFromBuild>
@@ -152,6 +154,7 @@
     <ClInclude Include="Crypto.h" />
     <ClInclude Include="CServer.h" />
     <ClInclude Include="DatabaseHelper.h" />
+    <ClInclude Include="DpdkRuntime.h" />
     <ClInclude Include="HttpParser.h" />
     <ClInclude Include="http_parser.h" />
     <ClInclude Include="jsoncpp\allocator.h" />
@@ -169,6 +172,7 @@
     <ClInclude Include="Epoll.h" />
     <ClInclude Include="Function.h" />
     <ClInclude Include="MysqlClient.h" />
+    <ClInclude Include="NetRuntimeConfig.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="resource.h" />

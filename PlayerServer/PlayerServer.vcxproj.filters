@@ -13,6 +13,7 @@
     <ClCompile Include="Sqlite3Client.cpp" />
     <ClCompile Include="DatabaseHelper.cpp" />
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="DpdkRuntime.cpp" />
     <ClCompile Include="jsoncpp\json_reader.cpp">
       <Filter>jsoncpp</Filter>
     </ClCompile>
@@ -23,10 +24,12 @@
       <Filter>jsoncpp</Filter>
     </ClCompile>
     <ClCompile Include="MysqlClient.cpp" />
+    <ClCompile Include="NetRuntimeConfig.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CServer.h" />
     <ClInclude Include="DatabaseHelper.h" />
+    <ClInclude Include="DpdkRuntime.h" />
     <ClInclude Include="HttpParser.h" />
     <ClInclude Include="http_parser.h" />
     <ClInclude Include="Logger.h" />
@@ -81,6 +84,7 @@
       <Filter>jsoncpp</Filter>
     </ClInclude>
     <ClInclude Include="MysqlClient.h" />
+    <ClInclude Include="NetRuntimeConfig.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sqlite3">
