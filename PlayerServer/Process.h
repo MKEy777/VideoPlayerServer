@@ -64,10 +64,11 @@ public:
 
     int SendFD(int fd) {
         struct msghdr msg;
-        memset(&msg, 0, sizeof(msg)); // 必须初始化
+        memset(&msg, 0, sizeof(msg)); // 初始化消息结构体
 
+        // 普通数据区
         iovec iov[2];
-        char buf[2][10] = { "e", "j" };
+        char buf[2][10] = { "e", "j" };//占位数据
         iov[0].iov_base = buf[0];
         iov[0].iov_len = sizeof(buf[0]);
         iov[1].iov_base = buf[1];
@@ -75,18 +76,23 @@ public:
         msg.msg_iov = iov;
         msg.msg_iovlen = 2;
 
-        size_t cm_len = CMSG_SPACE(sizeof(int));
+        // ----------- 控制消息区（传递fd）-----------
+        size_t cm_len = CMSG_SPACE(sizeof(int)); // 包含对齐的总空间
         cmsghdr* cmsg = (cmsghdr*)calloc(1, cm_len);
-        cmsg->cmsg_len = CMSG_LEN(sizeof(int)); // 数据净长
-        cmsg->cmsg_level = SOL_SOCKET;
-        cmsg->cmsg_type = SCM_RIGHTS;
-        *((int*)CMSG_DATA(cmsg)) = fd;
 
-        msg.msg_control = cmsg;
-        msg.msg_controllen = cm_len; // 使用 SPACE 包含填充
+        cmsg->cmsg_len = CMSG_LEN(sizeof(int)); // 实际数据长度（不含填充）
+        cmsg->cmsg_level = SOL_SOCKET;          // socket 层
+        cmsg->cmsg_type = SCM_RIGHTS;           // 表示传递“文件描述符”
 
+        *((int*)CMSG_DATA(cmsg)) = fd;          // 把 fd 写入控制数据区
+
+        msg.msg_control = cmsg;                 // 控制消息挂到 msg
+        msg.msg_controllen = cm_len;            // 控制消息总长度
+
+        // ----------- 发送消息（通过 UNIX 域 socket）-----------
         ssize_t ret = sendmsg(pipes[1], &msg, 0);
         free(cmsg);
+
         if (ret == -1) {
             return -2;
         }
@@ -95,8 +101,9 @@ public:
 
     int RecvFD(int& fd) {
         struct msghdr msg;
-        memset(&msg, 0, sizeof(msg));
+        memset(&msg, 0, sizeof(msg)); // 初始化
 
+        // ----------- 普通数据接收区-----------
         iovec iov[2];
         char buf[2][10];
         iov[0].iov_base = buf[0];
@@ -106,20 +113,24 @@ public:
         msg.msg_iov = iov;
         msg.msg_iovlen = 2;
 
+        // ----------- 控制消息接收区-----------
         size_t cm_len = CMSG_SPACE(sizeof(int));
         auto* cmsg = (cmsghdr*)calloc(1, cm_len);
+
         msg.msg_control = cmsg;
         msg.msg_controllen = cm_len;
 
-		ssize_t ret = recvmsg(pipes[0], &msg, 0);//阻塞等待父进程发送数据
+        // 阻塞等待父进程发送（核心：recvmsg）
+        ssize_t ret = recvmsg(pipes[0], &msg, 0);
         if (ret <= 0) {
             free(cmsg);
             return -1;
         }
 
-        struct cmsghdr* pcmsg = CMSG_FIRSTHDR(&msg);
+        // ----------- 解析控制消息-----------
+        struct cmsghdr* pcmsg = CMSG_FIRSTHDR(&msg); // 取第一个控制头
         if (pcmsg && pcmsg->cmsg_type == SCM_RIGHTS) {
-            fd = *(int*)CMSG_DATA(pcmsg);
+            fd = *(int*)CMSG_DATA(pcmsg); // 取出传递的 fd
         }
         else {
             free(cmsg);
